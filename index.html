@@ -138,7 +138,7 @@
                 </div>
                 <!-- タイトルを動的に設定 -->
                 <h1 id="pageTitleDisplay" class="text-3xl sm:text-4xl font-extrabold text-teal-600">ロボットプログラミング体験教室</h1>
-                <p class="mt-2 text-slate-600">未来のクリエイター、集まれ！楽しい体験会へようこそ！</p>
+                <p id="pageDescriptionDisplay" class="mt-2 text-slate-600">未来のクリエイター、集まれ！楽しい体験会へようこそ！</p>
                 <div id="schoolInfoDisplay" class="mt-4 text-sm text-slate-500 bg-white p-3 rounded-lg inline-block shadow-sm">
                     <!-- 住所・電話番号がここに表示されます -->
                 </div>
@@ -508,6 +508,10 @@
                                     <label class="block text-sm font-bold text-slate-600 mb-1">予約ページタイトル</label>
                                     <input type="text" name="pageTitle" id="adminPageTitleInput" class="w-full p-3 border border-slate-300 rounded focus:border-purple-500 focus:ring-1 focus:ring-purple-500" placeholder="例: ロボットプログラミング体験教室">
                                 </div>
+                                <div class="mb-4">
+                                     <label class="block text-sm font-bold text-slate-600 mb-1">予約ページキャッチコピー</label>
+                                     <input type="text" name="pageDescription" id="adminPageDescriptionInput" class="w-full p-3 border border-slate-300 rounded focus:border-purple-500 focus:ring-1 focus:ring-purple-500" placeholder="例: 未来のクリエイター、集まれ！楽しい体験会へようこそ！">
+                                </div>
                                 <div>
                                     <label class="block text-sm font-bold text-slate-600 mb-1">ヘッダー画像URL</label>
                                     <input type="text" name="headerImageUrl" id="adminHeaderImageInput" class="w-full p-3 border border-slate-300 rounded focus:border-purple-500 focus:ring-1 focus:ring-purple-500" placeholder="https://...">
@@ -805,6 +809,7 @@
             address: "東京都渋谷区神南1-1-1",
             phoneNumber: "03-1234-5678",
             pageTitle: "ロボットプログラミング体験教室",
+            pageDescription: "未来のクリエイター、集まれ！楽しい体験会へようこそ！",
             headerImageUrl: "https://images.unsplash.com/photo-1581092921461-eab62e97a782?q=80&w=2070&auto=format&fit=crop",
             allowedIPs: "", // IP制限用
             // マスタデータ (学年設定はスケジュール側に移管)
@@ -847,6 +852,7 @@
         const footerSchoolName = document.getElementById('footerSchoolName');
         const schoolInfoDisplay = document.getElementById('schoolInfoDisplay');
         const pageTitleDisplay = document.getElementById('pageTitleDisplay');
+        const pageDescriptionDisplay = document.getElementById('pageDescriptionDisplay');
         const headerImage = document.getElementById('headerImage');
         
         // Admin Inputs
@@ -856,6 +862,7 @@
         const adminPhoneInput = document.getElementById('adminPhoneInput');
         const adminAllowedIPsInput = document.getElementById('adminAllowedIPsInput');
         const adminPageTitleInput = document.getElementById('adminPageTitleInput');
+        const adminPageDescriptionInput = document.getElementById('adminPageDescriptionInput');
         const adminHeaderImageInput = document.getElementById('adminHeaderImageInput');
         
         // --- Firebase Setup ---
@@ -928,6 +935,7 @@
                     if(!currentSettings.contents) currentSettings.contents = defaultData.contents;
                     if(!currentSettings.schedule) currentSettings.schedule = {};
                     if(!currentSettings.pageTitle) currentSettings.pageTitle = defaultData.pageTitle;
+                    if(!currentSettings.pageDescription) currentSettings.pageDescription = defaultData.pageDescription;
                     if(!currentSettings.headerImageUrl) currentSettings.headerImageUrl = defaultData.headerImageUrl;
                 } else {
                     currentSettings = defaultData;
@@ -1007,6 +1015,11 @@
                 if (pageTitleDisplay) pageTitleDisplay.textContent = currentSettings.pageTitle;
                 document.title = currentSettings.pageTitle;
             }
+            // キャッチコピー更新
+            if (pageDescriptionDisplay) {
+                pageDescriptionDisplay.textContent = currentSettings.pageDescription || "未来のクリエイター、集まれ！楽しい体験会へようこそ！";
+            }
+
             if (currentSettings.headerImageUrl && headerImage) {
                 headerImage.src = currentSettings.headerImageUrl;
             }
@@ -1291,6 +1304,7 @@
             document.getElementById('adminPhoneInput').value = currentSettings.phoneNumber || "";
             document.getElementById('adminAllowedIPsInput').value = currentSettings.allowedIPs || "";
             document.getElementById('adminPageTitleInput').value = currentSettings.pageTitle || "";
+            document.getElementById('adminPageDescriptionInput').value = currentSettings.pageDescription || ""; // 追加
             document.getElementById('adminHeaderImageInput').value = currentSettings.headerImageUrl || "";
             
             // 現在のIPを表示
@@ -2018,6 +2032,7 @@
                 phoneNumber: formData.get('phoneNumber'),
                 allowedIPs: formData.get('allowedIPs'), // IP制限
                 pageTitle: formData.get('pageTitle'),
+                pageDescription: formData.get('pageDescription'), // 追加
                 headerImageUrl: formData.get('headerImageUrl')
             };
 
