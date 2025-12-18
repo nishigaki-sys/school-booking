@@ -113,34 +113,17 @@
         /* タイムライン表示用 */
         .timeline-container {
             position: relative;
-            height: 300px; /* 固定高さ */
-            background-color: #f8fafc;
+            height: 400px; /* 固定高さ */
+            background-color: #fff;
             border-radius: 0.5rem;
-            overflow-y: auto; /* 必要に応じてスクロール */
+            overflow-y: auto; /* スクロール */
             margin-bottom: 1rem;
             border: 1px solid #cbd5e1;
             cursor: crosshair; /* クリック可能であることを示す */
         }
-        .timeline-hour-marker {
-            position: absolute;
-            left: 0;
-            right: 0;
-            border-top: 1px dashed #e2e8f0;
-            height: 1px;
-            font-size: 0.6rem;
-            color: #94a3b8;
-            pointer-events: none; /* マウスイベントを透過 */
-        }
-        .timeline-hour-label {
-             position: absolute;
-             left: 2px;
-             font-size: 0.65rem;
-             color: #64748b;
-             transform: translateY(-50%);
-        }
         .timeline-event-block {
             position: absolute;
-            left: 40px; /* 時間ラベルの幅分空ける */
+            left: 50px; /* 時間ラベルの幅分空ける */
             right: 10px;
             background-color: #3b82f6;
             opacity: 0.9;
@@ -669,9 +652,9 @@
                     <div class="timeline-container relative bg-slate-50 border border-slate-200 rounded h-[300px] overflow-y-auto">
                         <!-- 時間軸メモリ (簡易) -->
                         <div class="absolute left-0 top-0 bottom-0 w-8 border-r border-slate-200 bg-white text-[10px] text-slate-400 text-center pt-1 leading-6">
-                            9:00<br>10:00<br>11:00<br>12:00<br>13:00<br>14:00<br>15:00<br>16:00<br>17:00<br>18:00
+                            9:00<br>10:00<br>11:00<br>12:00<br>13:00<br>14:00<br>15:00<br>16:00<br>17:00<br>18:00<br>19:00<br>20:00
                         </div>
-                        <div id="scheduleTimeline" class="absolute left-8 right-0 top-0 bottom-0 relative">
+                        <div id="scheduleTimeline" class="absolute left-8 right-0 top-0 bottom-0 relative h-[660px]">
                             <!-- JSでバーを追加 -->
                         </div>
                     </div>
@@ -1736,42 +1719,75 @@
             const timelineEl = document.getElementById('scheduleTimeline');
             timelineEl.innerHTML = '';
             
+            // 時間軸のベース設定
+            const startHour = 9;
+            const endHour = 20; // 20:00まで
+            // 高さ660pxに合わせる。11時間(660分)で660px => 1分1px
+            const pixelsPerMinute = 660 / ((endHour - startHour) * 60);
+
+            // 背景グリッド描画
+            for (let h = startHour; h < endHour; h++) {
+                // 1時間ごとの線
+                const hourTop = (h - startHour) * 60 * pixelsPerMinute;
+                const hourLine = document.createElement('div');
+                hourLine.className = 'absolute w-full border-t border-slate-300 pointer-events-none';
+                hourLine.style.top = `${hourTop}px`;
+                timelineEl.appendChild(hourLine);
+                
+                // 10分ごとの線
+                for (let m = 10; m < 60; m += 10) {
+                    const minTop = hourTop + (m * pixelsPerMinute);
+                    const minLine = document.createElement('div');
+                    minLine.className = 'absolute w-full border-t border-slate-100 pointer-events-none';
+                    minLine.style.top = `${minTop}px`;
+                    timelineEl.appendChild(minLine);
+                }
+            }
+            // 最後の線(20:00)
+             const lastTop = (endHour - startHour) * 60 * pixelsPerMinute;
+             const lastLine = document.createElement('div');
+             lastLine.className = 'absolute w-full border-t border-slate-300 pointer-events-none';
+             lastLine.style.top = `${lastTop}px`;
+             timelineEl.appendChild(lastLine);
+
             const schedules = currentSettings.schedule[selectedScheduleDateStr] || [];
             
             schedules.forEach((item, idx) => {
-                // ガード: 開始時間がないデータはスキップ
                 if (!item.startTime) return;
 
                 const content = currentSettings.contents.find(c => c.id === item.contentId);
                 const contentName = content ? content.name : '不明なコンテンツ';
                 
-                // 時間をパースして位置を計算
-                // 9:00 -> 0%, 18:00 -> 100% (9時間 = 540分)
                 const startParts = item.startTime.split(':');
                 const startMins = parseInt(startParts[0]) * 60 + parseInt(startParts[1]);
                 
-                let endMins = startMins + 60; // default 60min
+                let endMins = startMins + 60; 
                 if (item.endTime) {
                     const endParts = item.endTime.split(':');
                     endMins = parseInt(endParts[0]) * 60 + parseInt(endParts[1]);
                 }
                 
-                const baseMins = 9 * 60; // 9:00
-                const totalDuration = 9 * 60; // 9 hours range
+                const baseMins = startHour * 60;
                 
-                const topPercent = Math.max(0, (startMins - baseMins) / totalDuration * 100);
-                const heightPercent = Math.max(5, (endMins - startMins) / totalDuration * 100); // min height
+                // 範囲外チェック（簡易）
+                if (startMins < baseMins) return; // 9時前は表示しない（簡易対応）
+
+                const topPercent = (startMins - baseMins) * pixelsPerMinute;
+                const heightVal = (endMins - startMins) * pixelsPerMinute;
                 
                 const block = document.createElement('div');
                 block.className = 'timeline-event-block';
-                block.style.top = topPercent + '%';
-                block.style.height = heightPercent + '%';
-                block.style.left = '2px';
-                block.style.right = '2px';
+                block.style.top = `${topPercent}px`;
+                block.style.height = `${Math.max(20, heightVal)}px`; // 最低20px
+                block.style.left = '4px';
+                block.style.right = '4px';
                 block.textContent = `${item.startTime} ${contentName}`;
                 block.title = `${item.startTime}-${item.endTime || '?'} ${contentName}`;
                 
-                block.addEventListener('click', () => editSchedule(idx));
+                block.addEventListener('click', (e) => {
+                    e.stopPropagation(); // 親のクリックイベント（新規登録）を防ぐ
+                    editSchedule(idx);
+                });
                 
                 timelineEl.appendChild(block);
             });
@@ -1779,34 +1795,43 @@
 
         // タイムラインクリックで新規登録（時間自動入力）
         document.querySelector('.timeline-container').addEventListener('click', (e) => {
-             // タイムライン上の既存イベントブロックをクリックした場合は編集へ（バブリングでeditScheduleが呼ばれるはずだが、念のため除外）
-             if (e.target.classList.contains('timeline-event-block')) return;
+             if (e.target.closest('.timeline-event-block')) return;
 
-             const rect = e.currentTarget.getBoundingClientRect();
-             const y = e.clientY - rect.top;
-             const height = rect.height;
+             const timelineEl = document.getElementById('scheduleTimeline');
+             // timeline-containerがスクロール要素。クリック座標はe.clientYだが、スクロール分やコンテナ位置を考慮する必要がある
+             // e.clientY はビューポート基準。getBoundingClientRectもビューポート基準。
+             // スクロールしている場合、クリック位置に対応する内部コンテンツ(scheduleTimeline)上のY座標を求める必要がある。
              
-             // 9:00 (540min) start, total 540min (9 hours)
-             // Y position ratio -> minutes from start
-             const clickMins = (y / height) * 540 + 540;
+             // コンテナ(スクロール親)のRect
+             const containerRect = e.currentTarget.getBoundingClientRect();
+             // コンテナ内のクリック位置Y (スクロール量scrollTopを加算)
+             const clickYInsideContainer = (e.clientY - containerRect.top) + e.currentTarget.scrollTop;
              
-             // Round to nearest 15min
-             const roundedMins = Math.round(clickMins / 15) * 15;
+             // 時間計算 (9:00開始, 1分=1pxとして計算しているため)
+             // 高さ660px = 11時間 = 660分 => 1px = 1分 (先ほどのrenderScheduleTimelineのpixelsPerMinute定義と合わせる)
+             const startHour = 9;
+             const endHour = 20;
+             const pixelsPerMinute = 660 / ((endHour - startHour) * 60); // = 1
+             
+             const minsFromStart = clickYInsideContainer / pixelsPerMinute;
+             const totalMins = (startHour * 60) + minsFromStart;
+             
+             // 10分刻みに丸める
+             const roundedMins = Math.round(totalMins / 10) * 10;
              
              const hour = Math.floor(roundedMins / 60);
              const min = roundedMins % 60;
              
              // 終了時間は+60分
              const endTotalMins = roundedMins + 60;
-             const endHour = Math.floor(endTotalMins / 60);
+             const endHourVal = Math.floor(endTotalMins / 60);
              const endMin = endTotalMins % 60;
 
              const formatTime = (h, m) => `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
              
-             // フォームリセットしてからセット
              resetScheduleForm();
              document.getElementById('modalStartTime').value = formatTime(hour, min);
-             document.getElementById('modalEndTime').value = formatTime(endHour, endMin);
+             document.getElementById('modalEndTime').value = formatTime(endHourVal, endMin);
         });
 
         async function deleteScheduleItem(idx, contentId, startTime) {
@@ -2354,14 +2379,6 @@
             const password = document.getElementById('adminPassword').value;
             loginSubmitBtn.disabled = true;
             try {
-                // IP Check (Client Side Only for Demo)
-                const isIPAllowed = await checkIPAccess(currentSettings.allowedIPs);
-                if (!isIPAllowed) {
-                    alert("許可されていないIPアドレスからのアクセスです。");
-                    loginSubmitBtn.disabled = false;
-                    return;
-                }
-
                 if (auth) {
                     await signInWithEmailAndPassword(auth, email, password);
                 } else {
