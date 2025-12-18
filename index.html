@@ -121,10 +121,10 @@
             border: 1px solid #cbd5e1;
             cursor: crosshair; /* クリック可能であることを示す */
         }
+        /* ラベルやラインはJSで動的に生成・配置するためCSSでの絶対配置は削除 */
         .timeline-event-block {
             position: absolute;
-            left: 50px; /* 時間ラベルの幅分空ける */
-            right: 10px;
+            /* left, top, height はJSで制御 */
             background-color: #3b82f6;
             opacity: 0.9;
             border-radius: 4px;
@@ -650,9 +650,9 @@
                 <div>
                     <h4 class="text-xs font-bold text-slate-500 mb-2">タイムライン</h4>
                     <div class="timeline-container relative bg-slate-50 border border-slate-200 rounded h-[300px] overflow-y-auto">
-                        <!-- 時間軸メモリ (簡易) -->
-                        <div class="absolute left-0 top-0 bottom-0 w-8 border-r border-slate-200 bg-white text-[10px] text-slate-400 text-center pt-1 leading-6">
-                            9:00<br>10:00<br>11:00<br>12:00<br>13:00<br>14:00<br>15:00<br>16:00<br>17:00<br>18:00<br>19:00<br>20:00
+                        <!-- 時間軸メモリ -->
+                        <div id="timelineAxis" class="absolute left-0 top-0 bottom-0 w-8 border-r border-slate-200 bg-white text-[10px] text-slate-400 text-center pt-1">
+                            <!-- JSで生成 -->
                         </div>
                         <div id="scheduleTimeline" class="absolute left-8 right-0 top-0 bottom-0 relative h-[660px]">
                             <!-- JSでバーを追加 -->
@@ -1428,23 +1428,6 @@
                 opt.textContent = c.name;
                 filterContentSelect.appendChild(opt);
             });
-            
-            // Set default dates for stats if empty
-            const statsStartInput = document.getElementById('statsStartDate');
-            const statsEndInput = document.getElementById('statsEndDate');
-            
-            if (!statsStartInput.value || !statsEndInput.value) {
-                const today = new Date();
-                const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-                const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-                const formatDate = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-                
-                statsStartInput.value = formatDate(firstDay);
-                statsEndInput.value = formatDate(lastDay);
-                
-                // Initial calc
-                setTimeout(() => document.getElementById('calcStatsBtn').click(), 100);
-            }
 
             renderContentsList();
             renderScheduleCalendar();
@@ -1718,6 +1701,8 @@
         function renderScheduleTimeline() {
             const timelineEl = document.getElementById('scheduleTimeline');
             timelineEl.innerHTML = '';
+            const axisEl = document.getElementById('timelineAxis');
+            axisEl.innerHTML = '';
             
             // 時間軸のベース設定
             const startHour = 9;
@@ -1725,30 +1710,35 @@
             // 高さ660pxに合わせる。11時間(660分)で660px => 1分1px
             const pixelsPerMinute = 660 / ((endHour - startHour) * 60);
 
-            // 背景グリッド描画
-            for (let h = startHour; h < endHour; h++) {
+            // 背景グリッド描画 & 時間軸ラベル
+            for (let h = startHour; h <= endHour; h++) {
                 // 1時間ごとの線
                 const hourTop = (h - startHour) * 60 * pixelsPerMinute;
-                const hourLine = document.createElement('div');
-                hourLine.className = 'absolute w-full border-t border-slate-300 pointer-events-none';
-                hourLine.style.top = `${hourTop}px`;
-                timelineEl.appendChild(hourLine);
                 
-                // 10分ごとの線
-                for (let m = 10; m < 60; m += 10) {
-                    const minTop = hourTop + (m * pixelsPerMinute);
-                    const minLine = document.createElement('div');
-                    minLine.className = 'absolute w-full border-t border-slate-100 pointer-events-none';
-                    minLine.style.top = `${minTop}px`;
-                    timelineEl.appendChild(minLine);
+                // 時間軸ラベル (Axis)
+                const labelDiv = document.createElement('div');
+                labelDiv.className = 'absolute w-full text-center transform -translate-y-1/2';
+                labelDiv.style.top = `${hourTop}px`;
+                labelDiv.textContent = `${h}:00`;
+                axisEl.appendChild(labelDiv);
+
+                if (h < endHour) {
+                    const hourLine = document.createElement('div');
+                    hourLine.className = 'absolute w-full border-t border-slate-300 pointer-events-none';
+                    hourLine.style.top = `${hourTop}px`;
+                    timelineEl.appendChild(hourLine);
+                    
+                    // 10分ごとの線
+                    for (let m = 10; m < 60; m += 10) {
+                        const minTop = hourTop + (m * pixelsPerMinute);
+                        const minLine = document.createElement('div');
+                        minLine.className = 'absolute w-full border-t border-slate-100 pointer-events-none';
+                        minLine.style.top = `${minTop}px`;
+                        timelineEl.appendChild(minLine);
+                    }
                 }
             }
-            // 最後の線(20:00)
-             const lastTop = (endHour - startHour) * 60 * pixelsPerMinute;
-             const lastLine = document.createElement('div');
-             lastLine.className = 'absolute w-full border-t border-slate-300 pointer-events-none';
-             lastLine.style.top = `${lastTop}px`;
-             timelineEl.appendChild(lastLine);
+            // 最後の線(20:00) - Loop外で処理不要(<= endHourでカバー済、ただし線は不要かも)
 
             const schedules = currentSettings.schedule[selectedScheduleDateStr] || [];
             
@@ -1758,10 +1748,12 @@
                 const content = currentSettings.contents.find(c => c.id === item.contentId);
                 const contentName = content ? content.name : '不明なコンテンツ';
                 
+                // 時間をパースして位置を計算
+                // 9:00 -> 0%, 18:00 -> 100% (9時間 = 540分)
                 const startParts = item.startTime.split(':');
                 const startMins = parseInt(startParts[0]) * 60 + parseInt(startParts[1]);
                 
-                let endMins = startMins + 60; 
+                let endMins = startMins + 60; // default 60min
                 if (item.endTime) {
                     const endParts = item.endTime.split(':');
                     endMins = parseInt(endParts[0]) * 60 + parseInt(endParts[1]);
@@ -1772,13 +1764,13 @@
                 // 範囲外チェック（簡易）
                 if (startMins < baseMins) return; // 9時前は表示しない（簡易対応）
 
-                const topPercent = (startMins - baseMins) * pixelsPerMinute;
-                const heightVal = (endMins - startMins) * pixelsPerMinute;
+                const top = (startMins - baseMins) * pixelsPerMinute;
+                const height = (endMins - startMins) * pixelsPerMinute;
                 
                 const block = document.createElement('div');
                 block.className = 'timeline-event-block';
-                block.style.top = `${topPercent}px`;
-                block.style.height = `${Math.max(20, heightVal)}px`; // 最低20px
+                block.style.top = `${top}px`;
+                block.style.height = `${Math.max(20, height)}px`; // 最低20px
                 block.style.left = '4px';
                 block.style.right = '4px';
                 block.textContent = `${item.startTime} ${contentName}`;
@@ -1805,6 +1797,8 @@
              // コンテナ(スクロール親)のRect
              const containerRect = e.currentTarget.getBoundingClientRect();
              // コンテナ内のクリック位置Y (スクロール量scrollTopを加算)
+             // ヘッダー(Axis)分32px(w-8)はずれているが、scheduleTimelineはabsolute left-8なので、クリック座標Xは関係ない
+             // 縦位置計算
              const clickYInsideContainer = (e.clientY - containerRect.top) + e.currentTarget.scrollTop;
              
              // 時間計算 (9:00開始, 1分=1pxとして計算しているため)
@@ -2379,6 +2373,14 @@
             const password = document.getElementById('adminPassword').value;
             loginSubmitBtn.disabled = true;
             try {
+                // IP Check (Client Side Only for Demo)
+                const isIPAllowed = await checkIPAccess(currentSettings.allowedIPs);
+                if (!isIPAllowed) {
+                    alert("許可されていないIPアドレスからのアクセスです。");
+                    loginSubmitBtn.disabled = false;
+                    return;
+                }
+
                 if (auth) {
                     await signInWithEmailAndPassword(auth, email, password);
                 } else {
