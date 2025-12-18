@@ -214,9 +214,11 @@
                         <h2 class="text-xl font-bold mb-4 text-center"><span class="bg-teal-500 text-white rounded-full px-3 py-1 mr-2">1</span>お子様の学年を選んでください</h2>
                         <div id="gradeSelector" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             <!-- 学年区分変更: 年中/年長, 小1~2, 小3以上 -->
-                            <button data-grade="preschool" class="w-full text-lg font-bold py-4 px-4 bg-white border-2 border-pink-400 text-pink-500 rounded-xl hover:bg-pink-50 transition-transform hover:scale-105">年中・年長</button>
-                            <button data-grade="grade1_2" class="w-full text-lg font-bold py-4 px-4 bg-white border-2 border-orange-400 text-orange-500 rounded-xl hover:bg-orange-50 transition-transform hover:scale-105">小1～小2</button>
-                            <button data-grade="grade3_plus" class="w-full text-lg font-bold py-4 px-4 bg-white border-2 border-blue-400 text-blue-500 rounded-xl hover:bg-blue-50 transition-transform hover:scale-105">小3以上</button>
+                            <!-- カラーコード適用: ピンク #ff91aa, オレンジ #ffac2d, ブルー #00b4dc -->
+                            <!-- Tailwindにはカスタムカラーがないためstyle属性で指定し、borderなどは近い色を使用またはstyleで上書き -->
+                            <button data-grade="preschool" class="w-full text-lg font-bold py-4 px-4 bg-white border-2 rounded-xl transition-transform hover:scale-105" style="border-color: #ff91aa; color: #ff91aa;">年中・年長</button>
+                            <button data-grade="grade1_2" class="w-full text-lg font-bold py-4 px-4 bg-white border-2 rounded-xl transition-transform hover:scale-105" style="border-color: #ffac2d; color: #ffac2d;">小1～小2</button>
+                            <button data-grade="grade3_plus" class="w-full text-lg font-bold py-4 px-4 bg-white border-2 rounded-xl transition-transform hover:scale-105" style="border-color: #00b4dc; color: #00b4dc;">小3以上</button>
                         </div>
                     </div>
 
@@ -846,7 +848,7 @@
     const GRADE_CONFIG = {
         preschool: { 
             label: '年中・年長', 
-            color: 'pink', 
+            color: '#ff91aa', 
             bg: 'bg-pink-100', 
             text: 'text-pink-800', 
             border: 'border-pink-200', 
@@ -856,11 +858,13 @@
             btnText: 'text-pink-500',
             btnHover: 'hover:bg-pink-50',
             eventBg: 'bg-pink-500',
-            eventBorder: 'border-pink-600'
+            eventBorder: 'border-pink-600',
+            // Custom hex for timeline
+            hex: '#ff91aa'
         },
         grade1_2: { 
             label: '小1～小2', 
-            color: 'orange', 
+            color: '#ffac2d', 
             bg: 'bg-orange-100', 
             text: 'text-orange-800', 
             border: 'border-orange-200', 
@@ -870,11 +874,12 @@
             btnText: 'text-orange-500',
             btnHover: 'hover:bg-orange-50',
             eventBg: 'bg-orange-500',
-            eventBorder: 'border-orange-600'
+            eventBorder: 'border-orange-300',
+            hex: '#ffac2d'
         },
         grade3_plus: { 
             label: '小3以上', 
-            color: 'blue', 
+            color: '#00b4dc', 
             bg: 'bg-blue-100', 
             text: 'text-blue-800', 
             border: 'border-blue-200', 
@@ -884,7 +889,8 @@
             btnText: 'text-blue-500',
             btnHover: 'hover:bg-blue-50',
             eventBg: 'bg-blue-500',
-            eventBorder: 'border-blue-600'
+            eventBorder: 'border-blue-300',
+            hex: '#00b4dc'
         }
     };
 
@@ -1814,17 +1820,22 @@
                 
                 // 学年カラー適用
                 let colorClass = "bg-blue-500"; 
+                // Custom hex using style for timeline blocks as Tailwind arbitrary values might be purged if not used directly
+                // So using style.backgroundColor for exact match with config
+                let bgColor = "#3b82f6";
+
                 if (item.grades && item.grades.length > 0) {
-                    if (item.grades.includes('preschool')) colorClass = GRADE_CONFIG.preschool.eventBg;
-                    else if (item.grades.includes('grade1_2')) colorClass = GRADE_CONFIG.grade1_2.eventBg;
-                    else if (item.grades.includes('grade3_plus')) colorClass = GRADE_CONFIG.grade3_plus.eventBg;
+                    if (item.grades.includes('preschool')) bgColor = GRADE_CONFIG.preschool.hex;
+                    else if (item.grades.includes('grade1_2')) bgColor = GRADE_CONFIG.grade1_2.hex;
+                    else if (item.grades.includes('grade3_plus')) bgColor = GRADE_CONFIG.grade3_plus.hex;
                 }
                 
-                block.className = `timeline-event-block ${colorClass}`;
+                block.className = `timeline-event-block`;
+                block.style.backgroundColor = bgColor;
                 block.style.top = `${top}px`;
                 block.style.height = `${Math.max(20, height)}px`; // 最低20px
-                block.style.left = '4px';
-                block.style.right = '4px';
+                block.style.left = '50px';
+                block.style.right = '10px';
                 block.textContent = `${item.startTime} ${contentName}`;
                 block.title = `${item.startTime}-${item.endTime || '?'} ${contentName}`;
                 
@@ -1855,90 +1866,6 @@
                 timelineEl.appendChild(block);
             });
         }
-        
-        // タイムラインコンテナへのドロップ処理
-        const timelineContainer = document.querySelector('.timeline-container');
-        
-        timelineContainer.addEventListener('dragover', (e) => {
-             e.preventDefault(); // ドロップ許可
-        });
-        
-        timelineContainer.addEventListener('drop', async (e) => {
-             e.preventDefault();
-             if (draggingItemIndex === null) return;
-             
-             // コンテナ内の相対Y座標計算
-             const timelineEl = document.getElementById('scheduleTimeline');
-             const rect = timelineEl.getBoundingClientRect();
-             // コンテナのスクロール量も考慮が必要だが、rect.topはビューポート基準なので
-             // e.clientY - rect.top でタイムライン上部からのpxが出る
-             // dragStartY を引くことで、ブロックの上端位置を算出
-             const y = e.clientY - rect.top - dragStartY;
-             
-             // 時間計算
-             const startHour = 9;
-             const endHour = 20;
-             const pixelsPerMinute = 660 / ((endHour - startHour) * 60); 
-             
-             let minsFromStart = y / pixelsPerMinute;
-             let totalStartMins = (startHour * 60) + minsFromStart;
-             
-             // 10分刻みに丸める
-             totalStartMins = Math.round(totalStartMins / 10) * 10;
-             
-             // 範囲制限 (9:00 - 20:00)
-             if (totalStartMins < startHour * 60) totalStartMins = startHour * 60;
-             
-             // 現在の期間を計算
-             const currentItem = currentSettings.schedule[selectedScheduleDateStr][draggingItemIndex];
-             const oldStartParts = currentItem.startTime.split(':');
-             const oldStartMins = parseInt(oldStartParts[0]) * 60 + parseInt(oldStartParts[1]);
-             
-             let durationMins = 60; // default
-             if (currentItem.endTime) {
-                 const oldEndParts = currentItem.endTime.split(':');
-                 const oldEndMins = parseInt(oldEndParts[0]) * 60 + parseInt(oldEndParts[1]);
-                 durationMins = oldEndMins - oldStartMins;
-             }
-             
-             const totalEndMins = totalStartMins + durationMins;
-             if (totalEndMins > endHour * 60) {
-                 // はみ出る場合は調整（または移動キャンセル）
-                 // totalStartMins = (endHour * 60) - durationMins; 
-                 // 今回は簡易的に移動キャンセルせず、はみ出し許容または最大値で止める
-             }
-
-             const formatTime = (totalMins) => {
-                 const h = Math.floor(totalMins / 60);
-                 const m = totalMins % 60;
-                 return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
-             };
-             
-             const newStartTime = formatTime(totalStartMins);
-             const newEndTime = formatTime(totalEndMins);
-             
-             // 重複チェック (自分自身は除外)
-             if (isOverlapping(newStartTime, newEndTime, draggingItemIndex)) {
-                 alert("移動先の時間は他のスケジュールと重なっています。");
-                 return;
-             }
-             
-             // 更新
-             currentItem.startTime = newStartTime;
-             currentItem.endTime = newEndTime;
-             
-             // 保存 & 再描画
-             await saveSettingsToFirestore(currentSettings);
-             renderDayScheduleList();
-             renderScheduleTimeline();
-             renderScheduleCalendar();
-             
-             // フォームが開いていれば更新
-             if (editingScheduleIndex === draggingItemIndex) {
-                 editSchedule(draggingItemIndex);
-             }
-        });
-
 
         // タイムラインクリックで新規登録（時間自動入力）
         document.querySelector('.timeline-container').addEventListener('click', (e) => {
@@ -2386,395 +2313,6 @@
                     });
                 }
                 grid.appendChild(cell);
-            }
-        }
-        
-        // 4. 予約管理
-        function renderBookingManagement() {
-            const tbody = document.getElementById('bookingListTableBody');
-            tbody.innerHTML = '';
-            
-            // Filter conditions
-            const startStr = filterStartDateInput.value;
-            const endStr = filterEndDateInput.value;
-            const contentFilter = filterContentSelect.value;
-            const typeFilter = filterTypeSelect.value; // Note: type info is in Content, not Booking directly, need check
-            
-            const startDate = startStr ? new Date(startStr) : null;
-            const endDate = endStr ? new Date(endStr) : null;
-            
-            // Sort bookings by date desc
-            const sortedBookings = [...allBookings].sort((a, b) => {
-                const dateA = new Date(a.date);
-                const dateB = new Date(b.date);
-                return dateB - dateA;
-            });
-
-            const filteredBookings = sortedBookings.filter(b => {
-                // Date Filter
-                if (startDate || endDate) {
-                    const bDate = new Date(b.date);
-                    const bDateOnly = new Date(bDate.getFullYear(), bDate.getMonth(), bDate.getDate());
-                    if (startDate && bDateOnly < startDate) return false;
-                    if (endDate && bDateOnly > endDate) return false;
-                }
-                
-                // Content Filter
-                if (contentFilter && b.courseName !== contentFilter) return false;
-                
-                // Type Filter (Need to lookup content type)
-                if (typeFilter) {
-                    const content = currentSettings.contents.find(c => c.id === b.contentId);
-                    if (!content || content.type !== typeFilter) return false;
-                }
-                
-                return true;
-            });
-
-            if (filteredBookings.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-8 text-center text-slate-400">該当する予約はありません</td></tr>`;
-                return;
-            }
-
-            filteredBookings.forEach(b => {
-                const bDate = new Date(b.date);
-                const dateStr = `${bDate.getFullYear()}/${bDate.getMonth()+1}/${bDate.getDate()}`;
-                
-                // Get Content Info for Type
-                const content = currentSettings.contents.find(c => c.id === b.contentId);
-                const typeLabel = content ? (content.type === 'event' ? '<span class="bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs">イベント</span>' : '<span class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs">体験会</span>') : '<span class="text-gray-400">-</span>';
-
-                const row = document.createElement('tr');
-                row.className = "hover:bg-slate-50";
-                row.innerHTML = `
-                    <td class="px-4 py-3 font-bold text-slate-700">${dateStr}</td>
-                    <td class="px-4 py-3">${b.startTime}</td>
-                    <td class="px-4 py-3 font-medium">${b.courseName}</td>
-                    <td class="px-4 py-3">
-                        <div class="font-bold">${b.childName} <span class="text-xs font-normal">さん</span></div>
-                        <div class="text-xs text-slate-500">保護者: ${b.parentName}</div>
-                    </td>
-                    <td class="px-4 py-3 text-xs text-slate-500">
-                        <div>${b.email}</div>
-                        <div>${b.phone}</div>
-                    </td>
-                    <td class="px-4 py-3 text-center">${typeLabel}</td>
-                `;
-                tbody.appendChild(row);
-            });
-        }
-
-        // Booking Detail Modal Logic
-        function openBookingDetailModal(dateStr, event, content, bookings) {
-            document.getElementById('detailModalTitle').textContent = content.name;
-            document.getElementById('detailModalSubtitle').textContent = `${dateStr} ${event.startTime} - 申込数: ${bookings.length}/${event.capacity}`;
-            
-            const tbody = document.getElementById('bookingDetailList');
-            tbody.innerHTML = '';
-            
-            if (bookings.length === 0) {
-                document.getElementById('noBookingsMsg').classList.remove('hidden');
-            } else {
-                document.getElementById('noBookingsMsg').classList.add('hidden');
-                bookings.forEach(b => {
-                    const row = document.createElement('tr');
-                    row.className = "border-b border-slate-100 hover:bg-slate-50";
-                    const bDate = b.createdAt ? new Date(b.createdAt.seconds * 1000) : new Date();
-                    const bDateStr = `${bDate.getMonth()+1}/${bDate.getDate()} ${bDate.getHours()}:${String(bDate.getMinutes()).padStart(2,'0')}`;
-                    row.innerHTML = `
-                        <td class="px-4 py-2 font-bold">${b.childName} <span class="text-xs font-normal text-slate-400">さん</span></td>
-                        <td class="px-4 py-2">${b.parentName}</td>
-                        <td class="px-4 py-2 text-xs text-slate-500">${b.email}<br>${b.phone}</td>
-                        <td class="px-4 py-2 text-right text-xs text-slate-400">${bDateStr}</td>
-                    `;
-                    tbody.appendChild(row);
-                });
-            }
-            bookingDetailModal.classList.remove('hidden');
-        }
-        
-        closeDetailModalBtn.addEventListener('click', () => bookingDetailModal.classList.add('hidden'));
-
-        // Save Settings
-        adminSettingsForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const submitBtn = document.getElementById('saveSettingsBtn');
-            submitBtn.disabled = true;
-            submitBtn.textContent = "保存中...";
-
-            const formData = new FormData(adminSettingsForm);
-            
-            const newSettings = {
-                ...currentSettings, // Keep contents and schedule
-                schoolName: formData.get('schoolName'),
-                schoolId: formData.get('schoolId'),
-                address: formData.get('address'),
-                phoneNumber: formData.get('phoneNumber'),
-                allowedIPs: formData.get('allowedIPs'), // IP制限
-                pageTitle: formData.get('pageTitle'),
-                pageDescription: formData.get('pageDescription'), // 追加
-                headerImageUrl: formData.get('headerImageUrl')
-            };
-
-            await saveSettingsToFirestore(newSettings);
-            submitBtn.disabled = false;
-            submitBtn.textContent = "設定を保存";
-        });
-
-        // Login Logic
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('adminEmail').value;
-            const password = document.getElementById('adminPassword').value;
-            loginSubmitBtn.disabled = true;
-            try {
-                if (auth) {
-                    await signInWithEmailAndPassword(auth, email, password);
-                } else {
-                    if(email && password) { user = { email: email, isAnonymous: false }; updateUIBasedOnAuth(); } 
-                    else { throw new Error("Input required"); }
-                }
-                loginModal.classList.add('hidden');
-                enterAdminMode();
-                showToast("ログインしました");
-            } catch (error) {
-                loginError.classList.remove('hidden');
-            } finally {
-                loginSubmitBtn.disabled = false;
-            }
-        });
-
-        logoutBtn.addEventListener('click', async () => {
-            if (auth) { await signOut(auth); await signInAnonymously(auth); } 
-            else { user = { isAnonymous: true }; updateUIBasedOnAuth(); }
-            exitAdminMode();
-            showToast("ログアウトしました");
-        });
-
-        closeLoginModal.addEventListener('click', () => loginModal.classList.add('hidden'));
-
-        // --- Booking Logic (New Data Structure) ---
-
-        function showToast(msg) {
-            toast.textContent = msg;
-            toast.classList.remove('translate-y-20', 'opacity-0');
-            setTimeout(() => { toast.classList.add('translate-y-20', 'opacity-0'); }, 5000); 
-        }
-
-        function resetBookingView() {
-            gradeSelector.querySelectorAll('button').forEach(btn => {
-                btn.classList.remove('bg-teal-500', 'text-white', 'border-teal-500');
-                btn.classList.add('bg-white');
-            });
-            calendarContainer.style.display = 'none';
-            timeSlotsContainer.style.display = 'none';
-            bookingForm.style.display = 'none';
-            inputPhase.classList.remove('hidden');
-            confirmPhase.classList.add('hidden');
-            selectedGrade = null;
-        }
-
-        gradeSelector.addEventListener('click', (e) => {
-            if (e.target.tagName === 'BUTTON') {
-                selectedGrade = e.target.dataset.grade;
-                document.querySelectorAll('#gradeSelector button').forEach(btn => {
-                    btn.classList.remove('bg-teal-500', 'text-white', 'border-teal-500');
-                    btn.classList.add('bg-white');
-                });
-                e.target.classList.add('bg-teal-500', 'text-white', 'border-teal-500');
-                e.target.classList.remove('bg-white');
-                calendarContainer.style.display = 'block';
-                calendarContainer.classList.add('fade-in');
-                timeSlotsContainer.style.display = 'none';
-                bookingForm.style.display = 'none';
-                renderCalendar();
-            }
-        });
-
-        prevMonthBtn.addEventListener('click', () => { current_date.setMonth(current_date.getMonth() - 1); renderCalendar(); });
-        nextMonthBtn.addEventListener('click', () => { current_date.setMonth(current_date.getMonth() + 1); renderCalendar(); });
-        
-        calendarGrid.addEventListener('click', (e) => {
-             const target = e.target.closest('.available');
-            if (target) {
-                const date = target.dataset.date;
-                selectedDate = new Date(date);
-                document.querySelectorAll('.calendar-day').forEach(day => day.classList.remove('selected-day'));
-                target.classList.add('selected-day');
-                renderTimeSlots(selectedDate);
-            }
-        });
-
-        timeSlotsContainer.addEventListener('click', (e) => {
-            if (e.target.tagName === 'BUTTON') {
-                const time = e.target.dataset.time;
-                const contentId = e.target.dataset.contentid;
-                
-                selectedContent = currentSettings.contents.find(c => c.id === contentId);
-                
-                // 選択された枠の情報を保持
-                selectedStartTime = time;
-                selectedSlotCapacity = parseInt(e.target.dataset.capacity || 0);
-
-                const formattedDate = `${selectedDate.getFullYear()}年${selectedDate.getMonth() + 1}月${selectedDate.getDate()}日`;
-                selectedSlotInfo.textContent = `${formattedDate} ${time} [${selectedContent.name}]`;
-                selectedPriceInfo.textContent = `参加費: ${Number(selectedContent.price).toLocaleString()}円`;
-                
-                // バナー画像表示
-                const imgEl = document.getElementById('bookingContentImage');
-                if (selectedContent.imageUrl) {
-                    imgEl.src = selectedContent.imageUrl;
-                    imgEl.classList.remove('hidden');
-                } else {
-                    imgEl.classList.add('hidden');
-                }
-                
-                bookingForm.style.display = 'block';
-                bookingForm.classList.add('slide-in-up');
-                
-                // Reset to input phase
-                inputPhase.classList.remove('hidden');
-                confirmPhase.classList.add('hidden');
-                
-                bookingForm.scrollIntoView({ behavior: 'smooth' });
-            }
-        });
-        
-        // Confirmation Flow
-        userInfoForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const parentName = document.getElementById('parentName').value;
-            const childName = document.getElementById('childName').value;
-            const email = document.getElementById('email').value;
-            const phone = document.getElementById('phone').value;
-            
-            // データ一時保存
-            pendingBookingData = {
-                schoolName: currentSettings.schoolName,
-                schoolId: currentSettings.schoolId || "unknown",
-                grade: selectedGrade,
-                courseName: selectedContent.name,
-                contentId: selectedContent.id,
-                date: selectedDate.toISOString(),
-                timeString: selectedSlotInfo.textContent,
-                startTime: selectedStartTime, 
-                price: selectedContent.price,
-                parentName, childName, email, phone
-            };
-            
-            // 確認画面表示
-            document.getElementById('confirmParentName').textContent = parentName;
-            document.getElementById('confirmEmail').textContent = email;
-            document.getElementById('confirmPhone').textContent = phone;
-            document.getElementById('confirmChildName').textContent = childName;
-            
-            inputPhase.classList.add('hidden');
-            confirmPhase.classList.remove('hidden');
-            confirmPhase.scrollIntoView({ behavior: 'smooth' });
-        });
-        
-        backToInputBtn.addEventListener('click', () => {
-            confirmPhase.classList.add('hidden');
-            inputPhase.classList.remove('hidden');
-        });
-        
-        confirmBookingBtn.addEventListener('click', async () => {
-            if (!pendingBookingData) return;
-            
-            // クライアント側での最終定員チェック
-            const localDateStr = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth()+1).padStart(2,'0')}-${String(selectedDate.getDate()).padStart(2,'0')}`;
-            const currentBookingsCount = allBookings.filter(b => {
-                if (!b.date) return false;
-                const bDate = new Date(b.date);
-                const bLocalStr = `${bDate.getFullYear()}-${String(bDate.getMonth()+1).padStart(2,'0')}-${String(bDate.getDate()).padStart(2,'0')}`;
-                return bLocalStr === localDateStr && 
-                       b.contentId === pendingBookingData.contentId && 
-                       b.startTime === selectedStartTime;
-            }).length;
-
-            if (currentBookingsCount >= selectedSlotCapacity) {
-                alert("申し訳ありません。タッチの差で満席となりました。\n恐れ入りますが、別の日程をご検討ください。");
-                renderTimeSlots(selectedDate);
-                // Reset views
-                inputPhase.classList.remove('hidden');
-                confirmPhase.classList.add('hidden');
-                bookingForm.style.display = 'none';
-                return;
-            }
-
-            confirmBookingBtn.disabled = true;
-            confirmBookingBtn.textContent = "予約処理中...";
-
-            const success = await addBookingToFirestore(pendingBookingData);
-            confirmBookingBtn.disabled = false;
-            confirmBookingBtn.textContent = "この内容で予約を確定する";
-
-            if (success) {
-                modalSummary.innerHTML = `
-                    <p><strong>教室:</strong> ${currentSettings.schoolName}校</p>
-                    <p><strong>日時:</strong> ${selectedSlotInfo.textContent}</p>
-                    <p><strong>保護者様:</strong> ${pendingBookingData.parentName} 様</p>
-                `;
-                successModal.classList.remove('hidden');
-                userInfoForm.reset();
-                resetBookingView();
-            } else {
-                alert("予約の保存に失敗しました。");
-            }
-        });
-
-        closeModalBtn.addEventListener('click', () => successModal.classList.add('hidden'));
-
-        function renderCalendar() {
-            const year = current_date.getFullYear();
-            const month = current_date.getMonth();
-            calendarTitle.textContent = `${year}年 ${month + 1}月`;
-            const calendarDays = calendarGrid.querySelectorAll('.calendar-day');
-            calendarDays.forEach(day => day.remove());
-            const firstDayOfMonth = new Date(year, month, 1).getDay();
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-
-            for (let i = 0; i < firstDayOfMonth; i++) {
-                const emptyCell = document.createElement('div');
-                emptyCell.classList.add('calendar-day');
-                calendarGrid.appendChild(emptyCell);
-            }
-
-            for (let day = 1; day <= daysInMonth; day++) {
-                const cell = document.createElement('div');
-                cell.textContent = day;
-                cell.classList.add('calendar-day', 'flex', 'items-center', 'justify-center', 'rounded-full');
-                const currentDateObj = new Date(year, month, day);
-                const localDateStr = `${currentDateObj.getFullYear()}-${String(currentDateObj.getMonth()+1).padStart(2,'0')}-${String(currentDateObj.getDate()).padStart(2,'0')}`;
-                
-                // Check availability based on schedule and selectedGrade
-                let isAvailable = false;
-                if (currentSettings.schedule[localDateStr]) {
-                    const dayEvents = currentSettings.schedule[localDateStr];
-                    // 修正: schedule.grades または content.grades を確認する (後方互換性)
-                    isAvailable = dayEvents.some(evt => {
-                        const content = currentSettings.contents.find(c => c.id === evt.contentId);
-                        const targetGrades = evt.grades || (content ? content.grades : []) || [];
-                        return targetGrades.includes(selectedGrade);
-                    });
-                }
-
-                if (currentDateObj < today) {
-                      cell.classList.add('disabled');
-                } else if (isAvailable) {
-                    cell.classList.add('available');
-                    cell.dataset.date = currentDateObj.toISOString();
-                    
-                    // Apply Color based on Grade
-                    const config = GRADE_CONFIG[selectedGrade];
-                    cell.classList.add(config.bg, config.text);
-                    
-                } else {
-                      cell.classList.add('disabled');
-                }
-                calendarGrid.appendChild(cell);
             }
         }
         
