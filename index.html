@@ -113,42 +113,53 @@
         /* タイムライン表示用 */
         .timeline-container {
             position: relative;
-            height: 100px;
-            background-color: #f1f5f9;
+            height: 300px;
+            background-color: #f8fafc;
             border-radius: 0.5rem;
-            overflow: hidden;
+            overflow-y: auto;
             margin-bottom: 1rem;
-            border: 1px solid #e2e8f0;
+            border: 1px solid #cbd5e1;
+            cursor: crosshair; /* クリック可能であることを示す */
         }
         .timeline-hour-marker {
             position: absolute;
-            top: 0;
-            bottom: 0;
-            border-left: 1px dashed #cbd5e1;
+            left: 0;
+            right: 0;
+            border-top: 1px dashed #e2e8f0;
+            height: 1px;
             font-size: 0.6rem;
             color: #94a3b8;
-            padding-left: 2px;
+            pointer-events: none; /* マウスイベントを透過 */
+        }
+        .timeline-hour-label {
+             position: absolute;
+             left: 2px;
+             font-size: 0.65rem;
+             color: #64748b;
+             transform: translateY(-50%);
         }
         .timeline-event-block {
             position: absolute;
-            top: 10px;
-            bottom: 10px;
+            left: 40px; /* 時間ラベルの幅分空ける */
+            right: 10px;
             background-color: #3b82f6;
-            opacity: 0.8;
+            opacity: 0.9;
             border-radius: 4px;
             color: white;
-            font-size: 0.65rem;
-            padding: 2px;
+            font-size: 0.7rem;
+            padding: 4px 8px;
             overflow: hidden;
             white-space: nowrap;
             text-overflow: ellipsis;
             cursor: pointer;
             z-index: 10;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border: 1px solid #2563eb;
+            transition: transform 0.1s;
         }
         .timeline-event-block:hover {
-            opacity: 1;
             z-index: 20;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transform: scale(1.02);
         }
     </style>
 </head>
@@ -1104,14 +1115,19 @@
             
             const address = currentSettings.address || "";
             const phone = currentSettings.phoneNumber || "";
+            
+            // 住所と電話番号の表示ロジック修正: 校舎名を先頭に追加
             if (sName || address || phone) {
                 let html = '';
+                // 1. 校舎名を先頭に表示 (太字・ボーダー)
                 if (sName) {
                     html += `<p class="font-bold text-lg text-slate-800 mb-2 border-b border-slate-200 pb-2">${sName}校</p>`;
                 }
+                // 2. 住所
                 if (address) {
                     html += `<p class="flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>${address}</p>`;
                 }
+                // 3. 電話番号
                 if (phone) {
                     html += `<p class="flex items-center gap-2 mt-1"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>${phone}</p>`;
                 }
@@ -1131,7 +1147,7 @@
                 const statsStartInput = document.getElementById('statsStartDate');
                 const statsEndInput = document.getElementById('statsEndDate');
                 
-                if (!statsStartInput.value || !statsEndInput.value) {
+                if (statsStartInput && !statsStartInput.value) {
                     const today = new Date();
                     const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
                     const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
@@ -1141,7 +1157,7 @@
                     statsEndInput.value = formatDate(lastDay);
                     
                     // Initial calc
-                    setTimeout(() => document.getElementById('calcStatsBtn').click(), 100);
+                    setTimeout(() => document.getElementById('calcStatsBtn')?.click(), 100);
                 }
             }
         };
@@ -1429,23 +1445,6 @@
                 opt.textContent = c.name;
                 filterContentSelect.appendChild(opt);
             });
-            
-            // Set default dates for stats if empty
-            const statsStartInput = document.getElementById('statsStartDate');
-            const statsEndInput = document.getElementById('statsEndDate');
-            
-            if (!statsStartInput.value || !statsEndInput.value) {
-                const today = new Date();
-                const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-                const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-                const formatDate = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-                
-                statsStartInput.value = formatDate(firstDay);
-                statsEndInput.value = formatDate(lastDay);
-                
-                // Initial calc
-                setTimeout(() => document.getElementById('calcStatsBtn').click(), 100);
-            }
 
             renderContentsList();
             renderScheduleCalendar();
@@ -1756,6 +1755,38 @@
                 timelineEl.appendChild(block);
             });
         }
+
+        // タイムラインクリックで新規登録（時間自動入力）
+        document.querySelector('.timeline-container').addEventListener('click', (e) => {
+             // タイムライン上の既存イベントブロックをクリックした場合は編集へ（バブリングでeditScheduleが呼ばれるはずだが、念のため除外）
+             if (e.target.classList.contains('timeline-event-block')) return;
+
+             const rect = e.currentTarget.getBoundingClientRect();
+             const y = e.clientY - rect.top;
+             const height = rect.height;
+             
+             // 9:00 (540min) start, total 540min (9 hours)
+             // Y position ratio -> minutes from start
+             const clickMins = (y / height) * 540 + 540;
+             
+             // Round to nearest 15min
+             const roundedMins = Math.round(clickMins / 15) * 15;
+             
+             const hour = Math.floor(roundedMins / 60);
+             const min = roundedMins % 60;
+             
+             // 終了時間は+60分
+             const endTotalMins = roundedMins + 60;
+             const endHour = Math.floor(endTotalMins / 60);
+             const endMin = endTotalMins % 60;
+
+             const formatTime = (h, m) => `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+             
+             // フォームリセットしてからセット
+             resetScheduleForm();
+             document.getElementById('modalStartTime').value = formatTime(hour, min);
+             document.getElementById('modalEndTime').value = formatTime(endHour, endMin);
+        });
 
         async function deleteScheduleItem(idx, contentId, startTime) {
              // 予約状況確認
@@ -2302,6 +2333,14 @@
             const password = document.getElementById('adminPassword').value;
             loginSubmitBtn.disabled = true;
             try {
+                // IP Check (Client Side Only for Demo)
+                const isIPAllowed = await checkIPAccess(currentSettings.allowedIPs);
+                if (!isIPAllowed) {
+                    alert("許可されていないIPアドレスからのアクセスです。");
+                    loginSubmitBtn.disabled = false;
+                    return;
+                }
+
                 if (auth) {
                     await signInWithEmailAndPassword(auth, email, password);
                 } else {
