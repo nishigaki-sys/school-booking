@@ -350,7 +350,7 @@
                         <!-- グラフエリア -->
                         <div class="bg-white p-4 rounded-lg border border-slate-200 h-full flex flex-col">
                             <div class="flex justify-between items-center mb-2">
-                                <h3 class="text-sm font-bold text-slate-700">予約実績推移</h3>
+                                <h3 class="text-sm font-bold text-slate-700">予約実績推移 (積み上げ)</h3>
                                 <div class="flex bg-slate-100 rounded p-1">
                                     <button id="chartTabCreated" class="px-3 py-1 text-xs font-bold rounded bg-white text-blue-600 shadow-sm transition">受付日ベース</button>
                                     <button id="chartTabEvent" class="px-3 py-1 text-xs font-bold rounded text-slate-500 hover:text-slate-700 transition">参加日ベース</button>
@@ -1700,12 +1700,18 @@
 
              // 日付リスト生成
              const dateLabels = [];
-             const dataPoints = [];
+             // 学年ごとのデータ配列初期化
+             const preschoolData = [];
+             const grade1_2Data = [];
+             const grade3PlusData = [];
+
              const cur = new Date(startDate);
              while (cur <= endDate) {
                  const dateStr = `${cur.getFullYear()}/${cur.getMonth()+1}/${cur.getDate()}`;
                  dateLabels.push(dateStr);
-                 dataPoints.push(0);
+                 preschoolData.push(0);
+                 grade1_2Data.push(0);
+                 grade3PlusData.push(0);
                  cur.setDate(cur.getDate() + 1);
              }
              
@@ -1722,7 +1728,14 @@
                      const dStr = `${targetDate.getFullYear()}/${targetDate.getMonth()+1}/${targetDate.getDate()}`;
                      const idx = dateLabels.indexOf(dStr);
                      if (idx !== -1) {
-                         dataPoints[idx]++;
+                         // 学年判定
+                         if (b.grade === 'preschool') {
+                             preschoolData[idx]++;
+                         } else if (b.grade === 'grade1_2') {
+                             grade1_2Data[idx]++;
+                         } else if (b.grade === 'grade3_plus') {
+                             grade3PlusData[idx]++;
+                         }
                      }
                  }
              });
@@ -1731,19 +1744,46 @@
                  type: 'bar',
                  data: {
                      labels: dateLabels,
-                     datasets: [{
-                         label: type === 'created' ? '予約受付数' : '体験会参加数',
-                         data: dataPoints,
-                         backgroundColor: type === 'created' ? 'rgba(59, 130, 246, 0.6)' : 'rgba(16, 185, 129, 0.6)',
-                         borderColor: type === 'created' ? 'rgb(59, 130, 246)' : 'rgb(16, 185, 129)',
-                         borderWidth: 1
-                     }]
+                     datasets: [
+                         {
+                             label: '年中・年長',
+                             data: preschoolData,
+                             backgroundColor: 'rgba(236, 72, 153, 0.7)', // pink-500
+                             borderColor: 'rgb(236, 72, 153)',
+                             borderWidth: 1
+                         },
+                         {
+                             label: '小1～小2',
+                             data: grade1_2Data,
+                             backgroundColor: 'rgba(249, 115, 22, 0.7)', // orange-500
+                             borderColor: 'rgb(249, 115, 22)',
+                             borderWidth: 1
+                         },
+                         {
+                             label: '小3以上',
+                             data: grade3PlusData,
+                             backgroundColor: 'rgba(59, 130, 246, 0.7)', // blue-500
+                             borderColor: 'rgb(59, 130, 246)',
+                             borderWidth: 1
+                         }
+                     ]
                  },
                  options: {
                      responsive: true,
                      maintainAspectRatio: false,
                      scales: {
-                         y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                         x: { stacked: true },
+                         y: { 
+                             stacked: true,
+                             beginAtZero: true, 
+                             ticks: { stepSize: 1 } 
+                         }
+                     },
+                     plugins: {
+                         tooltip: {
+                             mode: 'index',
+                             intersect: false
+                         }
                      }
                  }
              });
@@ -1993,14 +2033,6 @@
             const password = document.getElementById('adminPassword').value;
             loginSubmitBtn.disabled = true;
             try {
-                // IP Check (Client Side Only for Demo)
-                const isIPAllowed = await checkIPAccess(currentSettings.allowedIPs);
-                if (!isIPAllowed) {
-                    alert("許可されていないIPアドレスからのアクセスです。");
-                    loginSubmitBtn.disabled = false;
-                    return;
-                }
-
                 if (auth) {
                     await signInWithEmailAndPassword(auth, email, password);
                 } else {
@@ -2036,16 +2068,9 @@
 
         function resetBookingView() {
             gradeSelector.querySelectorAll('button').forEach(btn => {
-                const gradeKey = btn.dataset.grade;
-                const config = GRADE_CONFIG[gradeKey];
-                // Remove dynamic colors
-                btn.classList.remove(config.btnBorder, config.btnText, config.selectRing, 'scale-105', 'shadow-lg');
-                btn.classList.add('bg-white', 'border-gray-200', 'text-gray-500'); // Reset to default
+                btn.classList.remove('bg-teal-500', 'text-white', 'border-teal-500');
+                btn.classList.add('bg-white');
             });
-            
-            // Re-apply default styles for selector buttons (reset state)
-            // Ideally we just clear active state styles
-            
             calendarContainer.style.display = 'none';
             timeSlotsContainer.style.display = 'none';
             bookingForm.style.display = 'none';
@@ -2057,16 +2082,12 @@
         gradeSelector.addEventListener('click', (e) => {
             if (e.target.tagName === 'BUTTON') {
                 selectedGrade = e.target.dataset.grade;
-                const config = GRADE_CONFIG[selectedGrade];
-
-                // Reset all buttons style first (simplified reset)
                 document.querySelectorAll('#gradeSelector button').forEach(btn => {
-                    btn.className = "w-full text-lg font-bold py-4 px-4 bg-white border-2 border-gray-200 text-gray-500 rounded-xl hover:bg-gray-50 transition-transform";
+                    btn.classList.remove('bg-teal-500', 'text-white', 'border-teal-500');
+                    btn.classList.add('bg-white');
                 });
-                
-                // Apply active style
-                e.target.className = `w-full text-lg font-bold py-4 px-4 bg-white border-2 ${config.btnBorder} ${config.btnText} rounded-xl ${config.btnHover} transition-transform scale-105 shadow-md`;
-
+                e.target.classList.add('bg-teal-500', 'text-white', 'border-teal-500');
+                e.target.classList.remove('bg-white');
                 calendarContainer.style.display = 'block';
                 calendarContainer.classList.add('fade-in');
                 timeSlotsContainer.style.display = 'none';
@@ -2083,24 +2104,8 @@
             if (target) {
                 const date = target.dataset.date;
                 selectedDate = new Date(date);
-                
-                // Reset previous selection
-                document.querySelectorAll('.calendar-day').forEach(day => {
-                    day.classList.remove('selected-day');
-                    day.style.backgroundColor = ''; 
-                    day.style.color = '';
-                });
-
-                // Apply selected style based on grade
+                document.querySelectorAll('.calendar-day').forEach(day => day.classList.remove('selected-day'));
                 target.classList.add('selected-day');
-                const config = GRADE_CONFIG[selectedGrade];
-                // Manually setting color for selection to override hover
-                // Tailwind classes might conflict with inline styles, but let's try class approach or inline
-                // Since we removed bg from css, we rely on renderCalendar to set initial bg. 
-                // For selection, we want a stronger color.
-                target.style.backgroundColor = config.color === 'pink' ? '#ec4899' : (config.color === 'orange' ? '#f97316' : '#3b82f6'); // pink-500, orange-500, blue-500
-                target.style.color = 'white';
-
                 renderTimeSlots(selectedDate);
             }
         });
@@ -2253,6 +2258,7 @@
                 let isAvailable = false;
                 if (currentSettings.schedule[localDateStr]) {
                     const dayEvents = currentSettings.schedule[localDateStr];
+                    // 修正: schedule.grades または content.grades を確認する (後方互換性)
                     isAvailable = dayEvents.some(evt => {
                         const content = currentSettings.contents.find(c => c.id === evt.contentId);
                         const targetGrades = evt.grades || (content ? content.grades : []) || [];
@@ -2265,11 +2271,6 @@
                 } else if (isAvailable) {
                     cell.classList.add('available');
                     cell.dataset.date = currentDateObj.toISOString();
-                    
-                    // Apply Color based on Grade
-                    const config = GRADE_CONFIG[selectedGrade];
-                    cell.classList.add(config.bg, config.text);
-                    
                 } else {
                       cell.classList.add('disabled');
                 }
@@ -2295,6 +2296,7 @@
                 const dayEvents = currentSettings.schedule[localDateStr];
                 dayEvents.forEach(evt => {
                     const content = currentSettings.contents.find(c => c.id === evt.contentId);
+                    // 修正: evt.grades または content.grades を確認する
                     const targetGrades = evt.grades || (content ? content.grades : []) || [];
                     if (content && targetGrades.includes(selectedGrade)) {
                         availableSlots.push({ ...evt, contentName: content.name });
@@ -2338,9 +2340,7 @@
                         button.disabled = true;
                         button.className = "w-full max-w-sm font-bold py-3 px-4 bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed";
                     } else {
-                        // Apply grade specific color for buttons
-                        const config = GRADE_CONFIG[selectedGrade];
-                        button.className = `w-full max-w-sm font-bold py-3 px-4 ${config.bg} ${config.text} rounded-lg hover:brightness-95 transition`;
+                        button.className = "w-full max-w-sm font-bold py-3 px-4 bg-teal-100 text-teal-700 rounded-lg hover:bg-teal-200 transition";
                     }
                     buttonContainer.appendChild(button);
                 });
