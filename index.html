@@ -566,10 +566,7 @@
                             <option value="event">イベント</option>
                         </select>
                     </div>
-                    <div class="flex-1">
-                        <label class="block text-xs font-bold text-slate-500 mb-1">時間(分)</label>
-                        <input type="number" id="newContentDuration" class="w-full p-2 border border-slate-300 rounded text-sm" placeholder="90" value="90">
-                    </div>
+                    <!-- 時間(分)の入力欄は削除されました -->
                     <div class="flex-1">
                         <label class="block text-xs font-bold text-slate-500 mb-1">金額(円)</label>
                         <input type="number" id="newContentPrice" class="w-full p-2 border border-slate-300 rounded text-sm" placeholder="1500">
@@ -615,10 +612,14 @@
                     </div>
                     <div class="flex gap-2">
                         <div class="flex-1">
-                            <label class="block text-xs text-slate-500 mb-1">開始時間</label>
+                            <label class="block text-xs text-slate-500 mb-1">開始</label>
                             <input type="time" id="modalStartTime" class="w-full p-2 border border-slate-300 rounded text-sm">
                         </div>
-                        <div class="w-20">
+                        <div class="flex-1">
+                            <label class="block text-xs text-slate-500 mb-1">終了</label>
+                            <input type="time" id="modalEndTime" class="w-full p-2 border border-slate-300 rounded text-sm">
+                        </div>
+                        <div class="w-16">
                             <label class="block text-xs text-slate-500 mb-1">定員</label>
                             <input type="number" id="modalCapacity" value="5" class="w-full p-2 border border-slate-300 rounded text-sm">
                         </div>
@@ -742,12 +743,12 @@
             allowedIPs: "", // IP制限用
             // マスタデータ (学年設定はスケジュール側に移管)
             contents: [
-                { id: "c1", name: "はじめてのロボット体験", type: "trial", duration: 60, price: 1500, grades: ["preschool"], imageUrl: "https://images.unsplash.com/photo-1581092921461-eab62e97a782?q=80&w=2070&auto=format&fit=crop" }, 
-                { id: "c2", name: "探検ロボットプログラミング", type: "trial", duration: 90, price: 2200, grades: ["lower"], imageUrl: "https://images.unsplash.com/photo-1535378437327-b7149a516c58?q=80&w=2070&auto=format&fit=crop" },
-                { id: "c3", name: "AIロボット開発チャレンジ", type: "event", duration: 90, price: 3300, grades: ["upper"], imageUrl: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?q=80&w=2070&auto=format&fit=crop" }
+                { id: "c1", name: "はじめてのロボット体験", type: "trial", price: 1500, grades: ["preschool"], imageUrl: "https://images.unsplash.com/photo-1581092921461-eab62e97a782?q=80&w=2070&auto=format&fit=crop" }, 
+                { id: "c2", name: "探検ロボットプログラミング", type: "trial", price: 2200, grades: ["lower"], imageUrl: "https://images.unsplash.com/photo-1535378437327-b7149a516c58?q=80&w=2070&auto=format&fit=crop" },
+                { id: "c3", name: "AIロボット開発チャレンジ", type: "event", price: 3300, grades: ["upper"], imageUrl: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?q=80&w=2070&auto=format&fit=crop" }
             ],
             // スケジュールデータ: YYYY-MM-DD キーで配列を持つ
-            // item: { id, contentId, startTime, capacity, grades: [] }
+            // item: { id, contentId, startTime, endTime, capacity, grades: [] }
             schedule: {} 
         };
 
@@ -1225,7 +1226,6 @@
                     </div>
                     <div class="flex gap-2 text-xs text-slate-500">
                         <span class="bg-slate-100 px-1 rounded">${content.type === 'event' ? 'イベント' : '体験会'}</span>
-                        <span>${content.duration}分</span>
                         <span>${content.price}円</span>
                     </div>
                 `;
@@ -1269,7 +1269,7 @@
 
             document.getElementById('newContentName').value = content.name;
             document.getElementById('newContentType').value = content.type;
-            document.getElementById('newContentDuration').value = content.duration;
+            // duration removed
             document.getElementById('newContentPrice').value = content.price;
             document.getElementById('newContentImage').value = content.imageUrl || ""; // 追加: 画像URL
 
@@ -1286,7 +1286,7 @@
             editingContentId = null;
             document.getElementById('newContentName').value = "";
             document.getElementById('newContentType').value = "trial";
-            document.getElementById('newContentDuration').value = "90";
+            // duration removed
             document.getElementById('newContentPrice').value = "1500";
             document.getElementById('newContentImage').value = ""; // 追加: リセット
             
@@ -1299,17 +1299,17 @@
             const btn = document.getElementById('addContentBtn');
             const name = document.getElementById('newContentName').value;
             const type = document.getElementById('newContentType').value;
-            const duration = document.getElementById('newContentDuration').value;
+            // duration removed
             const price = document.getElementById('newContentPrice').value;
             const imageUrl = document.getElementById('newContentImage').value; // 追加: 画像URL取得
             
-            if(name && duration && price) {
+            if(name && price) {
                 btn.disabled = true;
                 btn.textContent = "保存中...";
                 
                 const contentData = {
                     id: editingContentId || ('c' + Date.now()),
-                    name, type, duration: parseInt(duration), price: parseInt(price), imageUrl // 追加: 画像URL保存
+                    name, type, price: parseInt(price), imageUrl // 追加: 画像URL保存
                 };
 
                 if (editingContentId) {
@@ -1358,7 +1358,9 @@
                         const content = currentSettings.contents.find(c => c.id === item.contentId) || { name: '不明' };
                         const div = document.createElement('div');
                         div.className = "bg-blue-100 text-blue-800 rounded px-1 mb-1 text-[10px] truncate";
-                        div.textContent = `${item.startTime} ${content.name}`;
+                        // changed to show start - end
+                        const endTimeDisplay = item.endTime ? ` - ${item.endTime}` : '';
+                        div.textContent = `${item.startTime}${endTimeDisplay} ${content.name}`;
                         cell.appendChild(div);
                     });
                 }
@@ -1379,7 +1381,7 @@
             currentSettings.contents.forEach(c => {
                 const opt = document.createElement('option');
                 opt.value = c.id;
-                opt.textContent = `${c.name} (${c.duration}分/${c.price}円)`;
+                opt.textContent = `${c.name} (${c.price}円)`;
                 select.appendChild(opt);
             });
 
@@ -1404,9 +1406,12 @@
                 const content = currentSettings.contents.find(c => c.id === item.contentId) || { name: '削除済みコンテンツ' };
                 const div = document.createElement('div');
                 div.className = "flex justify-between items-center bg-slate-50 p-2 rounded border border-slate-200";
+                
+                const endTimeDisplay = item.endTime ? ` - ${item.endTime}` : '';
+                
                 div.innerHTML = `
                     <div class="cursor-pointer flex-1" onclick="editSchedule(${idx})">
-                        <div class="font-bold text-slate-700 hover:text-blue-600 transition">${item.startTime} - ${content.name}</div>
+                        <div class="font-bold text-slate-700 hover:text-blue-600 transition">${item.startTime}${endTimeDisplay} ${content.name}</div>
                         <div class="text-xs text-slate-500">定員: ${item.capacity}名 <span class="text-blue-400 text-[10px] ml-1">(クリックで編集)</span></div>
                     </div>
                     <button class="text-red-500 hover:bg-red-50 p-1 rounded text-xs delete-sched-btn" data-idx="${idx}" data-content="${item.contentId}" data-time="${item.startTime}">削除</button>
@@ -1418,6 +1423,7 @@
                 const item = schedules[idx];
                 document.getElementById('modalContentSelect').value = item.contentId;
                 document.getElementById('modalStartTime').value = item.startTime;
+                document.getElementById('modalEndTime').value = item.endTime || "";
                 document.getElementById('modalCapacity').value = item.capacity;
                 // 学年チェックボックス反映
                 document.querySelectorAll('.schedule-grade-check').forEach(c => {
@@ -1471,6 +1477,7 @@
         function resetScheduleForm() {
             editingScheduleIndex = -1;
             document.getElementById('modalStartTime').value = "";
+            document.getElementById('modalEndTime').value = "";
             document.getElementById('modalCapacity').value = "5";
             document.querySelectorAll('.schedule-grade-check').forEach(c => c.checked = false);
             
@@ -1484,6 +1491,7 @@
             const btn = document.getElementById('addScheduleBtn');
             const contentId = document.getElementById('modalContentSelect').value;
             const startTime = document.getElementById('modalStartTime').value;
+            const endTime = document.getElementById('modalEndTime').value;
             const capacity = document.getElementById('modalCapacity').value;
             
             const grades = [];
@@ -1496,7 +1504,12 @@
                 document.getElementById('scheduleGradeErrorMsg').classList.add('hidden');
             }
 
-            if (contentId && startTime && capacity) {
+            if (contentId && startTime && endTime && capacity) {
+                 if (startTime >= endTime) {
+                    alert("終了時間は開始時間より後に設定してください");
+                    return;
+                }
+
                 btn.disabled = true;
                 btn.textContent = "保存中...";
                 
@@ -1508,6 +1521,7 @@
                     id: editingScheduleIndex !== -1 ? currentSettings.schedule[selectedScheduleDateStr][editingScheduleIndex].id : ('s' + Date.now()),
                     contentId,
                     startTime,
+                    endTime,
                     capacity: parseInt(capacity),
                     grades // スケジュールに学年情報を持たせる
                 };
@@ -1631,8 +1645,9 @@
                         else if (hasBooking) item.classList.add('bg-blue-50', 'border-blue-300');
                         
                         const remaining = evt.capacity - count;
+                        const endTimeDisplay = evt.endTime ? ` - ${evt.endTime}` : '';
                         item.innerHTML = `
-                            <div class="font-bold text-slate-700">${evt.startTime}</div>
+                            <div class="font-bold text-slate-700">${evt.startTime}${endTimeDisplay}</div>
                             <div class="text-slate-600 truncate" title="${content.name}">${content.name}</div>
                             <div class="flex justify-between items-center mt-1">
                                 <span class="font-bold ${isFull ? 'text-red-600' : 'text-slate-500'}">予約:${count}/${evt.capacity}</span>
