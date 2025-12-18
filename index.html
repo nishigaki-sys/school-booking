@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ロボットプログラミング体験教室 予約デモ</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap" rel="stylesheet">
@@ -17,25 +19,27 @@
             transition: all 0.2s ease-in-out;
             aspect-ratio: 1 / 1;
         }
-        /* 選択可能な日付のスタイル (動的に色が変わるためベースのみ) */
+        /* 選択可能な日付のスタイル */
         .available {
+            background-color: #c8f5e1;
+            color: #0d774a;
             cursor: pointer;
             font-weight: 700;
         }
         .available:hover {
+            background-color: #a2e9cb;
             transform: scale(1.05);
-            filter: brightness(0.95);
         }
-        /* 選択中の日付のスタイル (ベース) */
+        /* 選択中の日付のスタイル */
         .selected-day {
+            background-color: #2dd4bf;
             color: white;
             transform: scale(1.05);
-            box-shadow: 0 0 0 3px currentColor;
+            box-shadow: 0 0 0 3px #14b8a6;
         }
         /* 選択不可な日付のスタイル */
         .disabled {
             color: #cbd5e1;
-            background-color: #f1f5f9;
         }
         /* アニメーション用のクラス */
         .fade-in {
@@ -92,7 +96,9 @@
             margin-bottom: 2px;
             padding: 2px 4px;
             border-radius: 3px;
-            border-left-width: 3px;
+            background-color: #e0f2fe;
+            border-left: 3px solid #3b82f6;
+            color: #1e3a8a;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -317,25 +323,42 @@
                         </div>
                     </div>
 
-                    <!-- 期間指定集計 -->
-                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 mb-6">
-                        <h3 class="text-sm font-bold text-slate-700 mb-3 flex items-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-                            期間指定集計
-                        </h3>
-                        <div class="flex flex-wrap items-end gap-3 text-sm">
-                            <div>
-                                <label class="block text-xs text-slate-500 mb-1">開始日</label>
-                                <input type="date" id="statsStartDate" class="p-2 border border-slate-300 rounded">
+                    <!-- 期間指定集計 & グラフ -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <!-- 集計パネル -->
+                        <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 h-full">
+                            <h3 class="text-sm font-bold text-slate-700 mb-3 flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                                期間指定集計
+                            </h3>
+                            <div class="flex flex-wrap items-end gap-3 text-sm mb-4">
+                                <div>
+                                    <label class="block text-xs text-slate-500 mb-1">開始日</label>
+                                    <input type="date" id="statsStartDate" class="p-2 border border-slate-300 rounded">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-slate-500 mb-1">終了日</label>
+                                    <input type="date" id="statsEndDate" class="p-2 border border-slate-300 rounded">
+                                </div>
+                                <button id="calcStatsBtn" class="bg-slate-700 text-white font-bold py-2 px-4 rounded hover:bg-slate-600">集計</button>
                             </div>
-                            <div>
-                                <label class="block text-xs text-slate-500 mb-1">終了日</label>
-                                <input type="date" id="statsEndDate" class="p-2 border border-slate-300 rounded">
+                            <div id="periodStatsResult" class="hidden p-3 bg-white border border-slate-100 rounded text-sm mb-4">
+                                <!-- 結果表示 -->
                             </div>
-                            <button id="calcStatsBtn" class="bg-slate-700 text-white font-bold py-2 px-4 rounded hover:bg-slate-600">集計</button>
                         </div>
-                        <div id="periodStatsResult" class="mt-3 hidden p-3 bg-white border border-slate-100 rounded text-sm">
-                            <!-- 結果表示 -->
+
+                        <!-- グラフエリア -->
+                        <div class="bg-white p-4 rounded-lg border border-slate-200 h-full flex flex-col">
+                            <div class="flex justify-between items-center mb-2">
+                                <h3 class="text-sm font-bold text-slate-700">予約実績推移</h3>
+                                <div class="flex bg-slate-100 rounded p-1">
+                                    <button id="chartTabCreated" class="px-3 py-1 text-xs font-bold rounded bg-white text-blue-600 shadow-sm transition">受付日ベース</button>
+                                    <button id="chartTabEvent" class="px-3 py-1 text-xs font-bold rounded text-slate-500 hover:text-slate-700 transition">参加日ベース</button>
+                                </div>
+                            </div>
+                            <div class="relative flex-1 w-full min-h-[200px]">
+                                <canvas id="bookingChart"></canvas>
+                            </div>
                         </div>
                     </div>
 
@@ -799,6 +822,10 @@
         let currentSettings = null;
         let allBookings = []; // 予約データ保持用
         
+        // チャート関連
+        let bookingChartInstance = null;
+        let activeChartTab = 'created'; // 'created' | 'event'
+
         let adminDashboardDate = new Date(); // 管理画面ダッシュボードカレンダー用
         let adminScheduleDate = new Date(); // 管理画面スケジュール登録カレンダー用
         let selectedScheduleDateStr = ""; // モーダルで開いている日付
@@ -1030,6 +1057,10 @@
         const calcStatsBtn = document.getElementById('calcStatsBtn');
         const periodStatsResult = document.getElementById('periodStatsResult');
         
+        // Dashboard Chart Tabs
+        const chartTabCreated = document.getElementById('chartTabCreated');
+        const chartTabEvent = document.getElementById('chartTabEvent');
+
         // Booking Management Filter
         const filterStartDateInput = document.getElementById('filterStartDate');
         const filterEndDateInput = document.getElementById('filterEndDate');
@@ -1171,7 +1202,7 @@
         prevScheduleMonthBtn.addEventListener('click', () => { adminScheduleDate.setMonth(adminScheduleDate.getMonth() - 1); renderScheduleCalendar(); });
         nextScheduleMonthBtn.addEventListener('click', () => { adminScheduleDate.setMonth(adminScheduleDate.getMonth() + 1); renderScheduleCalendar(); });
 
-        // Stats Calculation
+        // Stats Calculation & Chart
         calcStatsBtn.addEventListener('click', () => {
             const startStr = statsStartDateInput.value;
             const endStr = statsEndDateInput.value;
@@ -1207,6 +1238,38 @@
                 </div>
             `;
             periodStatsResult.classList.remove('hidden');
+            
+            // グラフ更新
+            renderBookingChart(startDate, endDate, activeChartTab);
+        });
+        
+        // Chart Tab Switch
+        chartTabCreated.addEventListener('click', () => {
+            activeChartTab = 'created';
+            chartTabCreated.classList.add('bg-white', 'text-blue-600', 'shadow-sm');
+            chartTabCreated.classList.remove('text-slate-500', 'hover:text-slate-700');
+            chartTabEvent.classList.remove('bg-white', 'text-blue-600', 'shadow-sm');
+            chartTabEvent.classList.add('text-slate-500', 'hover:text-slate-700');
+            
+            const startStr = statsStartDateInput.value;
+            const endStr = statsEndDateInput.value;
+            if (startStr && endStr) {
+                 renderBookingChart(new Date(startStr), new Date(endStr), activeChartTab);
+            }
+        });
+
+        chartTabEvent.addEventListener('click', () => {
+            activeChartTab = 'event';
+            chartTabEvent.classList.add('bg-white', 'text-blue-600', 'shadow-sm');
+            chartTabEvent.classList.remove('text-slate-500', 'hover:text-slate-700');
+            chartTabCreated.classList.remove('bg-white', 'text-blue-600', 'shadow-sm');
+            chartTabCreated.classList.add('text-slate-500', 'hover:text-slate-700');
+            
+            const startStr = statsStartDateInput.value;
+            const endStr = statsEndDateInput.value;
+            if (startStr && endStr) {
+                 renderBookingChart(new Date(startStr), new Date(endStr), activeChartTab);
+            }
         });
         
         // Booking Management Filter Logic
@@ -1624,6 +1687,66 @@
 
             const rate = totalCapacity > 0 ? Math.round((bookingCount / totalCapacity) * 100) : 0;
             return { bookingCount, totalCapacity, rate };
+        }
+        
+        // グラフ描画用
+        function renderBookingChart(startDate, endDate, type = 'created') {
+             const ctx = document.getElementById('bookingChart');
+             if (!ctx) return;
+             
+             if (bookingChartInstance) {
+                 bookingChartInstance.destroy();
+             }
+
+             // 日付リスト生成
+             const dateLabels = [];
+             const dataPoints = [];
+             const cur = new Date(startDate);
+             while (cur <= endDate) {
+                 const dateStr = `${cur.getFullYear()}/${cur.getMonth()+1}/${cur.getDate()}`;
+                 dateLabels.push(dateStr);
+                 dataPoints.push(0);
+                 cur.setDate(cur.getDate() + 1);
+             }
+             
+             // 集計
+             allBookings.forEach(b => {
+                 let targetDate = null;
+                 if (type === 'created' && b.createdAt) {
+                     targetDate = new Date(b.createdAt.seconds * 1000);
+                 } else if (type === 'event' && b.date) {
+                     targetDate = new Date(b.date);
+                 }
+                 
+                 if (targetDate) {
+                     const dStr = `${targetDate.getFullYear()}/${targetDate.getMonth()+1}/${targetDate.getDate()}`;
+                     const idx = dateLabels.indexOf(dStr);
+                     if (idx !== -1) {
+                         dataPoints[idx]++;
+                     }
+                 }
+             });
+
+             bookingChartInstance = new Chart(ctx, {
+                 type: 'bar',
+                 data: {
+                     labels: dateLabels,
+                     datasets: [{
+                         label: type === 'created' ? '予約受付数' : '体験会参加数',
+                         data: dataPoints,
+                         backgroundColor: type === 'created' ? 'rgba(59, 130, 246, 0.6)' : 'rgba(16, 185, 129, 0.6)',
+                         borderColor: type === 'created' ? 'rgb(59, 130, 246)' : 'rgb(16, 185, 129)',
+                         borderWidth: 1
+                     }]
+                 },
+                 options: {
+                     responsive: true,
+                     maintainAspectRatio: false,
+                     scales: {
+                         y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                     }
+                 }
+             });
         }
 
         function renderAdminDashboard() {
