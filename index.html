@@ -1445,6 +1445,23 @@
                 opt.textContent = c.name;
                 filterContentSelect.appendChild(opt);
             });
+            
+            // Set default dates for stats if empty
+            const statsStartInput = document.getElementById('statsStartDate');
+            const statsEndInput = document.getElementById('statsEndDate');
+            
+            if (!statsStartInput.value || !statsEndInput.value) {
+                const today = new Date();
+                const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+                const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+                const formatDate = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+                
+                statsStartInput.value = formatDate(firstDay);
+                statsEndInput.value = formatDate(lastDay);
+                
+                // Initial calc
+                setTimeout(() => document.getElementById('calcStatsBtn').click(), 100);
+            }
 
             renderContentsList();
             renderScheduleCalendar();
@@ -1722,7 +1739,11 @@
             const schedules = currentSettings.schedule[selectedScheduleDateStr] || [];
             
             schedules.forEach((item, idx) => {
-                const content = currentSettings.contents.find(c => c.id === item.contentId) || { name: '??' };
+                // ガード: 開始時間がないデータはスキップ
+                if (!item.startTime) return;
+
+                const content = currentSettings.contents.find(c => c.id === item.contentId);
+                const contentName = content ? content.name : '不明なコンテンツ';
                 
                 // 時間をパースして位置を計算
                 // 9:00 -> 0%, 18:00 -> 100% (9時間 = 540分)
@@ -1747,8 +1768,8 @@
                 block.style.height = heightPercent + '%';
                 block.style.left = '2px';
                 block.style.right = '2px';
-                block.textContent = `${item.startTime} ${content.name}`;
-                block.title = `${item.startTime}-${item.endTime || '?'} ${content.name}`;
+                block.textContent = `${item.startTime} ${contentName}`;
+                block.title = `${item.startTime}-${item.endTime || '?'} ${contentName}`;
                 
                 block.addEventListener('click', () => editSchedule(idx));
                 
