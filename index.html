@@ -21,20 +21,21 @@
         }
         /* 選択可能な日付のスタイル */
         .available {
-            /* background-color: #c8f5e1;  Default color, overridden by JS */
-            /* color: #0d774a; */
+            background-color: #c8f5e1;
+            color: #0d774a;
             cursor: pointer;
             font-weight: 700;
         }
         .available:hover {
+            background-color: #a2e9cb;
             transform: scale(1.05);
-            filter: brightness(0.95);
         }
         /* 選択中の日付のスタイル */
         .selected-day {
-            color: white !important;
+            background-color: #2dd4bf;
+            color: white;
             transform: scale(1.05);
-            box-shadow: 0 0 0 3px currentColor;
+            box-shadow: 0 0 0 3px #14b8a6;
         }
         /* 選択不可な日付のスタイル */
         .disabled {
@@ -95,10 +96,9 @@
             margin-bottom: 2px;
             padding: 2px 4px;
             border-radius: 3px;
-            /* background-color: #e0f2fe; Default */
-            /* border-left: 3px solid #3b82f6; Default */
-            /* color: #1e3a8a; Default */
-            color: white; /* Text white for custom bg */
+            background-color: #e0f2fe;
+            border-left: 3px solid #3b82f6;
+            color: #1e3a8a;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -214,10 +214,9 @@
                         <h2 class="text-xl font-bold mb-4 text-center"><span class="bg-teal-500 text-white rounded-full px-3 py-1 mr-2">1</span>お子様の学年を選んでください</h2>
                         <div id="gradeSelector" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             <!-- 学年区分変更: 年中/年長, 小1~2, 小3以上 -->
-                            <!-- カラーコード適用: ピンク #ff91aa, オレンジ #ffac2d, ブルー #00b4dc -->
-                            <button data-grade="preschool" class="w-full text-lg font-bold py-4 px-4 bg-white border-2 rounded-xl transition-transform hover:scale-105" style="border-color: #ff91aa; color: #ff91aa;">年中・年長</button>
-                            <button data-grade="grade1_2" class="w-full text-lg font-bold py-4 px-4 bg-white border-2 rounded-xl transition-transform hover:scale-105" style="border-color: #ffac2d; color: #ffac2d;">小1～小2</button>
-                            <button data-grade="grade3_plus" class="w-full text-lg font-bold py-4 px-4 bg-white border-2 rounded-xl transition-transform hover:scale-105" style="border-color: #00b4dc; color: #00b4dc;">小3以上</button>
+                            <button data-grade="preschool" class="w-full text-lg font-bold py-4 px-4 bg-white border-2 border-pink-400 text-pink-500 rounded-xl hover:bg-pink-50 transition-transform hover:scale-105">年中・年長</button>
+                            <button data-grade="grade1_2" class="w-full text-lg font-bold py-4 px-4 bg-white border-2 border-orange-400 text-orange-500 rounded-xl hover:bg-orange-50 transition-transform hover:scale-105">小1～小2</button>
+                            <button data-grade="grade3_plus" class="w-full text-lg font-bold py-4 px-4 bg-white border-2 border-blue-400 text-blue-500 rounded-xl hover:bg-blue-50 transition-transform hover:scale-105">小3以上</button>
                         </div>
                     </div>
 
@@ -847,7 +846,7 @@
     const GRADE_CONFIG = {
         preschool: { 
             label: '年中・年長', 
-            color: '#ff91aa', 
+            color: 'pink', 
             bg: 'bg-pink-100', 
             text: 'text-pink-800', 
             border: 'border-pink-200', 
@@ -857,12 +856,11 @@
             btnText: 'text-pink-500',
             btnHover: 'hover:bg-pink-50',
             eventBg: 'bg-pink-500',
-            eventBorder: 'border-pink-600',
-            hex: '#ff91aa'
+            eventBorder: 'border-pink-600'
         },
         grade1_2: { 
             label: '小1～小2', 
-            color: '#ffac2d', 
+            color: 'orange', 
             bg: 'bg-orange-100', 
             text: 'text-orange-800', 
             border: 'border-orange-200', 
@@ -872,12 +870,11 @@
             btnText: 'text-orange-500',
             btnHover: 'hover:bg-orange-50',
             eventBg: 'bg-orange-500',
-            eventBorder: 'border-orange-300',
-            hex: '#ffac2d'
+            eventBorder: 'border-orange-600'
         },
         grade3_plus: { 
             label: '小3以上', 
-            color: '#00b4dc', 
+            color: 'blue', 
             bg: 'bg-blue-100', 
             text: 'text-blue-800', 
             border: 'border-blue-200', 
@@ -887,8 +884,7 @@
             btnText: 'text-blue-500',
             btnHover: 'hover:bg-blue-50',
             eventBg: 'bg-blue-500',
-            eventBorder: 'border-blue-300',
-            hex: '#00b4dc'
+            eventBorder: 'border-blue-600'
         }
     };
 
@@ -1818,22 +1814,17 @@
                 
                 // 学年カラー適用
                 let colorClass = "bg-blue-500"; 
-                // Custom hex using style for timeline blocks as Tailwind arbitrary values might be purged if not used directly
-                // So using style.backgroundColor for exact match with config
-                let bgColor = "#3b82f6";
-
                 if (item.grades && item.grades.length > 0) {
-                    if (item.grades.includes('preschool')) bgColor = GRADE_CONFIG.preschool.hex;
-                    else if (item.grades.includes('grade1_2')) bgColor = GRADE_CONFIG.grade1_2.hex;
-                    else if (item.grades.includes('grade3_plus')) bgColor = GRADE_CONFIG.grade3_plus.hex;
+                    if (item.grades.includes('preschool')) colorClass = GRADE_CONFIG.preschool.eventBg;
+                    else if (item.grades.includes('grade1_2')) colorClass = GRADE_CONFIG.grade1_2.eventBg;
+                    else if (item.grades.includes('grade3_plus')) colorClass = GRADE_CONFIG.grade3_plus.eventBg;
                 }
                 
-                block.className = `timeline-event-block`;
-                block.style.backgroundColor = bgColor;
+                block.className = `timeline-event-block ${colorClass}`;
                 block.style.top = `${top}px`;
                 block.style.height = `${Math.max(20, height)}px`; // 最低20px
-                block.style.left = '50px';
-                block.style.right = '10px';
+                block.style.left = '4px';
+                block.style.right = '4px';
                 block.textContent = `${item.startTime} ${contentName}`;
                 block.title = `${item.startTime}-${item.endTime || '?'} ${contentName}`;
                 
@@ -1864,6 +1855,90 @@
                 timelineEl.appendChild(block);
             });
         }
+        
+        // タイムラインコンテナへのドロップ処理
+        const timelineContainer = document.querySelector('.timeline-container');
+        
+        timelineContainer.addEventListener('dragover', (e) => {
+             e.preventDefault(); // ドロップ許可
+        });
+        
+        timelineContainer.addEventListener('drop', async (e) => {
+             e.preventDefault();
+             if (draggingItemIndex === null) return;
+             
+             // コンテナ内の相対Y座標計算
+             const timelineEl = document.getElementById('scheduleTimeline');
+             const rect = timelineEl.getBoundingClientRect();
+             // コンテナのスクロール量も考慮が必要だが、rect.topはビューポート基準なので
+             // e.clientY - rect.top でタイムライン上部からのpxが出る
+             // dragStartY を引くことで、ブロックの上端位置を算出
+             const y = e.clientY - rect.top - dragStartY;
+             
+             // 時間計算
+             const startHour = 9;
+             const endHour = 20;
+             const pixelsPerMinute = 660 / ((endHour - startHour) * 60); 
+             
+             let minsFromStart = y / pixelsPerMinute;
+             let totalStartMins = (startHour * 60) + minsFromStart;
+             
+             // 10分刻みに丸める
+             totalStartMins = Math.round(totalStartMins / 10) * 10;
+             
+             // 範囲制限 (9:00 - 20:00)
+             if (totalStartMins < startHour * 60) totalStartMins = startHour * 60;
+             
+             // 現在の期間を計算
+             const currentItem = currentSettings.schedule[selectedScheduleDateStr][draggingItemIndex];
+             const oldStartParts = currentItem.startTime.split(':');
+             const oldStartMins = parseInt(oldStartParts[0]) * 60 + parseInt(oldStartParts[1]);
+             
+             let durationMins = 60; // default
+             if (currentItem.endTime) {
+                 const oldEndParts = currentItem.endTime.split(':');
+                 const oldEndMins = parseInt(oldEndParts[0]) * 60 + parseInt(oldEndParts[1]);
+                 durationMins = oldEndMins - oldStartMins;
+             }
+             
+             const totalEndMins = totalStartMins + durationMins;
+             if (totalEndMins > endHour * 60) {
+                 // はみ出る場合は調整（または移動キャンセル）
+                 // totalStartMins = (endHour * 60) - durationMins; 
+                 // 今回は簡易的に移動キャンセルせず、はみ出し許容または最大値で止める
+             }
+
+             const formatTime = (totalMins) => {
+                 const h = Math.floor(totalMins / 60);
+                 const m = totalMins % 60;
+                 return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+             };
+             
+             const newStartTime = formatTime(totalStartMins);
+             const newEndTime = formatTime(totalEndMins);
+             
+             // 重複チェック (自分自身は除外)
+             if (isOverlapping(newStartTime, newEndTime, draggingItemIndex)) {
+                 alert("移動先の時間は他のスケジュールと重なっています。");
+                 return;
+             }
+             
+             // 更新
+             currentItem.startTime = newStartTime;
+             currentItem.endTime = newEndTime;
+             
+             // 保存 & 再描画
+             await saveSettingsToFirestore(currentSettings);
+             renderDayScheduleList();
+             renderScheduleTimeline();
+             renderScheduleCalendar();
+             
+             // フォームが開いていれば更新
+             if (editingScheduleIndex === draggingItemIndex) {
+                 editSchedule(draggingItemIndex);
+             }
+        });
+
 
         // タイムラインクリックで新規登録（時間自動入力）
         document.querySelector('.timeline-container').addEventListener('click', (e) => {
