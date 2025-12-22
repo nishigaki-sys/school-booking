@@ -27,7 +27,7 @@
             font-weight: 700;
         }
         .available:hover {
-            background-color: #a2e9cb;
+            opacity: 0.8;
             transform: scale(1.05);
         }
         /* 選択中の日付のスタイル */
@@ -96,9 +96,8 @@
             margin-bottom: 2px;
             padding: 2px 4px;
             border-radius: 3px;
-            background-color: #e0f2fe;
-            border-left: 3px solid #3b82f6;
-            color: #1e3a8a;
+            /* 背景色はJSで動的設定 */
+            color: white; /* テキスト白 */
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -106,8 +105,8 @@
             transition: opacity 0.2s;
         }
         .dashboard-event-item:hover {
-            opacity: 0.8;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            opacity: 0.9;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
         }
 
         /* タイムライン表示用 */
@@ -143,7 +142,7 @@
             left: 50px; /* 時間ラベルの幅分空ける */
             right: 10px;
             /* background-color はJSで動的に設定 */
-            opacity: 0.9;
+            opacity: 0.95;
             border-radius: 4px;
             color: white;
             font-size: 0.7rem;
@@ -163,7 +162,7 @@
             opacity: 1;
         }
         .timeline-event-block.dragging {
-            opacity: 0.5;
+            opacity: 0.7;
             z-index: 30;
         }
     </style>
@@ -214,9 +213,10 @@
                         <h2 class="text-xl font-bold mb-4 text-center"><span class="bg-teal-500 text-white rounded-full px-3 py-1 mr-2">1</span>お子様の学年を選んでください</h2>
                         <div id="gradeSelector" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             <!-- 学年区分変更: 年中/年長, 小1~2, 小3以上 -->
-                            <button data-grade="preschool" class="w-full text-lg font-bold py-4 px-4 bg-white border-2 border-pink-400 text-pink-500 rounded-xl hover:bg-pink-50 transition-transform hover:scale-105">年中・年長</button>
-                            <button data-grade="grade1_2" class="w-full text-lg font-bold py-4 px-4 bg-white border-2 border-orange-400 text-orange-500 rounded-xl hover:bg-orange-50 transition-transform hover:scale-105">小1～小2</button>
-                            <button data-grade="grade3_plus" class="w-full text-lg font-bold py-4 px-4 bg-white border-2 border-blue-400 text-blue-500 rounded-xl hover:bg-blue-50 transition-transform hover:scale-105">小3以上</button>
+                            <!-- クラスに直接色コードを指定して動的な色に対応 -->
+                            <button data-grade="preschool" class="grade-btn w-full text-lg font-bold py-4 px-4 bg-white border-2 border-[#ff91aa] text-[#ff91aa] rounded-xl hover:bg-pink-50 transition-transform hover:scale-105">年中・年長</button>
+                            <button data-grade="grade1_2" class="grade-btn w-full text-lg font-bold py-4 px-4 bg-white border-2 border-[#ffac2d] text-[#ffac2d] rounded-xl hover:bg-orange-50 transition-transform hover:scale-105">小1～小2</button>
+                            <button data-grade="grade3_plus" class="grade-btn w-full text-lg font-bold py-4 px-4 bg-white border-2 border-[#00b4dc] text-[#00b4dc] rounded-xl hover:bg-blue-50 transition-transform hover:scale-105">小3以上</button>
                         </div>
                     </div>
 
@@ -842,49 +842,49 @@
     import { getAuth, signInWithEmailAndPassword, signInAnonymously, signOut, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, doc, getDoc, setDoc, addDoc, collection, onSnapshot, serverTimestamp, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    // Grade Configuration - Centralized
+    // Grade Configuration - Updated colors and text color
     const GRADE_CONFIG = {
         preschool: { 
             label: '年中・年長', 
             color: 'pink', 
-            bg: 'bg-pink-100', 
-            text: 'text-pink-800', 
-            border: 'border-pink-200', 
-            selectBg: 'bg-pink-500', 
-            selectRing: 'ring-pink-300', 
-            btnBorder: 'border-pink-400',
-            btnText: 'text-pink-500',
+            bg: 'bg-[#ff91aa]', 
+            text: 'text-white', 
+            border: 'border-[#ff91aa]', 
+            selectBg: 'bg-[#ff91aa]', 
+            selectRing: 'ring-[#ff91aa]', 
+            btnBorder: 'border-[#ff91aa]',
+            btnText: 'text-[#ff91aa]',
             btnHover: 'hover:bg-pink-50',
-            eventBg: 'bg-pink-500',
-            eventBorder: 'border-pink-600'
+            eventBg: 'bg-[#ff91aa]',
+            eventBorder: 'border-[#ff91aa]'
         },
         grade1_2: { 
             label: '小1～小2', 
             color: 'orange', 
-            bg: 'bg-orange-100', 
-            text: 'text-orange-800', 
-            border: 'border-orange-200', 
-            selectBg: 'bg-orange-500', 
-            selectRing: 'ring-orange-300',
-            btnBorder: 'border-orange-400',
-            btnText: 'text-orange-500',
+            bg: 'bg-[#ffac2d]', 
+            text: 'text-white', 
+            border: 'border-[#ffac2d]', 
+            selectBg: 'bg-[#ffac2d]', 
+            selectRing: 'ring-[#ffac2d]',
+            btnBorder: 'border-[#ffac2d]',
+            btnText: 'text-[#ffac2d]',
             btnHover: 'hover:bg-orange-50',
-            eventBg: 'bg-orange-500',
-            eventBorder: 'border-orange-600'
+            eventBg: 'bg-[#ffac2d]',
+            eventBorder: 'border-[#ffac2d]'
         },
         grade3_plus: { 
             label: '小3以上', 
             color: 'blue', 
-            bg: 'bg-blue-100', 
-            text: 'text-blue-800', 
-            border: 'border-blue-200', 
-            selectBg: 'bg-blue-500', 
-            selectRing: 'ring-blue-300',
-            btnBorder: 'border-blue-400',
-            btnText: 'text-blue-500',
+            bg: 'bg-[#00b4dc]', 
+            text: 'text-white', 
+            border: 'border-[#00b4dc]', 
+            selectBg: 'bg-[#00b4dc]', 
+            selectRing: 'ring-[#00b4dc]',
+            btnBorder: 'border-[#00b4dc]',
+            btnText: 'text-[#00b4dc]',
             btnHover: 'hover:bg-blue-50',
-            eventBg: 'bg-blue-500',
-            eventBorder: 'border-blue-600'
+            eventBg: 'bg-[#00b4dc]',
+            eventBorder: 'border-[#00b4dc]'
         }
     };
 
@@ -893,7 +893,7 @@
         let auth = null;
         let db = null;
         let user = null;
-        let appId = 'default-app'; // デフォルト
+        let appId = 'robot-school-booking-v3';
 
         // 新しいデータ構造 (コンテンツベース)
         const defaultData = {
@@ -2353,26 +2353,36 @@
                         let colorClass = "bg-gray-100 border-gray-300"; // default
                         // 色設定
                         if (evt.grades && evt.grades.length > 0) {
-                            if (evt.grades.includes('preschool')) colorClass = GRADE_CONFIG.preschool.eventBg + " border " + GRADE_CONFIG.preschool.eventBorder;
-                            else if (evt.grades.includes('grade1_2')) colorClass = GRADE_CONFIG.grade1_2.eventBg + " border " + GRADE_CONFIG.grade1_2.eventBorder;
-                            else if (evt.grades.includes('grade3_plus')) colorClass = GRADE_CONFIG.grade3_plus.eventBg + " border " + GRADE_CONFIG.grade3_plus.eventBorder;
+                            if (evt.grades.includes('preschool')) colorClass = `style="background-color: ${GRADE_CONFIG.preschool.bg.replace('bg-[', '').replace(']', '')};"`;
+                            else if (evt.grades.includes('grade1_2')) colorClass = `style="background-color: ${GRADE_CONFIG.grade1_2.bg.replace('bg-[', '').replace(']', '')};"`;
+                            else if (evt.grades.includes('grade3_plus')) colorClass = `style="background-color: ${GRADE_CONFIG.grade3_plus.bg.replace('bg-[', '').replace(']', '')};"`;
                         }
                         
                         // オーバーライド: 満席時は赤枠強調など
                         if(isFull) {
-                            colorClass = "bg-red-50 border border-red-400";
+                            // 満席の場合は少し色を変えるなどのロジックも入れられるが、今回は枠線のみ
+                            colorClass += ` border border-red-400`;
                         }
 
-                        item.className = `dashboard-event-item ${colorClass}`;
+                        // JIT mode class or inline style
+                        // item.className = `dashboard-event-item ${colorClass}`;
+                        item.className = `dashboard-event-item`;
+                        // Extract color code from bg-[#...] format if needed or use inline style for robust coloring
+                        if (colorClass.startsWith('style=')) {
+                             item.setAttribute('style', colorClass.replace('style="', '').replace('"', ''));
+                        } else {
+                             item.className += ` ${colorClass}`;
+                        }
                         
                         const remaining = evt.capacity - count;
                         const endTimeDisplay = evt.endTime ? ` - ${evt.endTime}` : '';
                         item.innerHTML = `
-                            <div class="font-bold text-slate-700">${evt.startTime}${endTimeDisplay}</div>
-                            <div class="text-slate-600 truncate" title="${content.name}">${content.name}</div>
+                            <div class="font-bold text-white">${evt.startTime}${endTimeDisplay}</div>
+                            <div class="text-white truncate" title="${content.name}">${content.name}</div>
                             <div class="flex justify-between items-center mt-1">
-                                <span class="font-bold ${isFull ? 'text-red-600' : 'text-slate-500'}">予約:${count}/${evt.capacity}</span>
-                                <span class="text-xs bg-white px-1 rounded border border-slate-200">残:${remaining}</span>
+                                <span class="font-bold text-white">予約:${count}/${evt.capacity}</span>
+                                <!-- 残数の色修正: テキスト色をslate-600に指定 -->
+                                <span class="text-xs bg-white px-1 rounded border border-slate-200 text-slate-600 font-bold">残:${remaining}</span>
                             </div>
                         `;
                         
@@ -2562,10 +2572,12 @@
         }
 
         function resetBookingView() {
+            // 学年選択ボタンのスタイルリセットを修正
             gradeSelector.querySelectorAll('button').forEach(btn => {
-                btn.classList.remove('bg-teal-500', 'text-white', 'border-teal-500');
-                btn.classList.add('bg-white');
+                const config = GRADE_CONFIG[btn.dataset.grade];
+                btn.className = `grade-btn w-full text-lg font-bold py-4 px-4 bg-white border-2 ${config.btnBorder} ${config.btnText} rounded-xl ${config.btnHover} transition-transform hover:scale-105`;
             });
+            
             calendarContainer.style.display = 'none';
             timeSlotsContainer.style.display = 'none';
             bookingForm.style.display = 'none';
@@ -2577,12 +2589,17 @@
         gradeSelector.addEventListener('click', (e) => {
             if (e.target.tagName === 'BUTTON') {
                 selectedGrade = e.target.dataset.grade;
+                const config = GRADE_CONFIG[selectedGrade];
+                
+                // 全ボタンを非アクティブ（白背景）に戻す
                 document.querySelectorAll('#gradeSelector button').forEach(btn => {
-                    btn.classList.remove('bg-teal-500', 'text-white', 'border-teal-500');
-                    btn.classList.add('bg-white');
+                    const c = GRADE_CONFIG[btn.dataset.grade];
+                    btn.className = `grade-btn w-full text-lg font-bold py-4 px-4 bg-white border-2 ${c.btnBorder} ${c.btnText} rounded-xl ${c.btnHover} transition-transform hover:scale-105`;
                 });
-                e.target.classList.add('bg-teal-500', 'text-white', 'border-teal-500');
-                e.target.classList.remove('bg-white');
+                
+                // 選択されたボタンをアクティブにする（背景色あり、白文字）
+                e.target.className = `grade-btn w-full text-lg font-bold py-4 px-4 border-2 ${config.bg} ${config.text} ${config.btnBorder} rounded-xl shadow-lg transform scale-105`;
+                
                 calendarContainer.style.display = 'block';
                 calendarContainer.classList.add('fade-in');
                 timeSlotsContainer.style.display = 'none';
@@ -2601,6 +2618,13 @@
                 selectedDate = new Date(date);
                 document.querySelectorAll('.calendar-day').forEach(day => day.classList.remove('selected-day'));
                 target.classList.add('selected-day');
+                // 選択時の色設定
+                // カレンダー日付の選択色はデフォルトのまま(teal)にするか、グレード色にするか
+                // 統一感のため、グレード色を適用する
+                const config = GRADE_CONFIG[selectedGrade];
+                // Note: .selected-day class has !important rules in CSS, might need to override via inline style or specific class
+                // 今回はCSSの.selected-dayをJSで動的に色変えするのは複雑なので、CSS側を修正せずそのままteal系で表示します（要望は体験会コンテンツカラーなので）
+                
                 renderTimeSlots(selectedDate);
             }
         });
@@ -2762,17 +2786,24 @@
                 }
 
                 if (currentDateObj < today) {
-                      cell.classList.add('disabled');
+                       cell.classList.add('disabled');
                 } else if (isAvailable) {
                     cell.classList.add('available');
                     cell.dataset.date = currentDateObj.toISOString();
                     
                     // Apply Color based on Grade
+                    // 今回の修正: カレンダーの日付セルの色もグレードに合わせる
                     const config = GRADE_CONFIG[selectedGrade];
-                    cell.classList.add(config.bg, config.text);
+                    
+                    // 利用可能日であることを示すための淡い背景色と濃い文字色
+                    // config.bg は濃い色なので、透明度を下げるか、別の淡い色を使うのが理想だが、
+                    // 簡易的にデフォルトの teal 系 (.available) を使いつつ、アクセントとしてグレード色を使うのは難しい。
+                    // ここでは要望通り「体験会コンテンツのカラー」を使用するため、テキスト色を変更してみる。
+                    // ただし .available クラスのCSSが勝つ可能性があるので、インラインスタイルで補正。
+                    cell.setAttribute('style', `color: ${config.bg.replace('bg-[', '').replace(']', '')}; background-color: #f0fdfa;`); // 薄いteal背景 + グレード文字色
                     
                 } else {
-                      cell.classList.add('disabled');
+                       cell.classList.add('disabled');
                 }
                 calendarGrid.appendChild(cell);
             }
@@ -2842,7 +2873,7 @@
                     } else {
                         // Apply grade specific color for buttons
                         const config = GRADE_CONFIG[selectedGrade];
-                        button.className = `w-full max-w-sm font-bold py-3 px-4 ${config.bg} ${config.text} rounded-lg hover:brightness-95 transition`;
+                        button.className = `w-full max-w-sm font-bold py-3 px-4 ${config.bg} ${config.text} rounded-lg hover:brightness-95 transition shadow`;
                     }
                     buttonContainer.appendChild(button);
                 });
